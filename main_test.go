@@ -1,4 +1,4 @@
-package main_test
+package tls_mailer_test
 
 import (
 	"fmt"

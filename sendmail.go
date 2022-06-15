@@ -1,17 +1,6 @@
 package tls_mailer
 
 /*
- * This "SendMail" function does the same as "SendMail" function from "net/smtp" package (actual for go v1.18 at
- * 10.06.2022) "SendMail" function has also the same signature. But it uses smtpS connection, instead of default smtp
- * with starttls command that default "net/smtp"."SendMail()" function uses.
- * For those who is interested - difference is in time when tls encryption starts. With smptS (function in this package)
- * tls encryption starts immediately, so every bit is encrypted, just like httpS.
- * "net/smtp"."SendMail()" function establishes plaintext connection and starts encryption after first negotiation
- * (after hello).
- * For those who cares difference is significant. It has to be mentioned that smtps should be implemented on server, it
- * uses different port(usually 465) than STARTTLS(587). For example google mail accepts such connection, but outlook.com
- * does not.
- *
  * From the code sight main difference from "net/smtp"."SendMail()" is mostly in "Dial" function. Other parts just a bit
  * fixed to use unexported field "net/smtp"."Client"."ext" and unexported function "net/smtp"."Client"."hello()".
  * Unexported function has no good way to be used (if you know better way - please contact me), so I used exported
@@ -21,9 +10,9 @@ package tls_mailer
  * Function-helper "tlsDial" is replacement for original "net/smtp"."Dial()" function with same signature, but it calls
  * not "net"."Dial()" as "net/smtp"."Dial()" does, but "tls"."Dial()".
  *
- * Function-helper "validateLine" is direct copy from "net/smtp" package.
+ * Function-helper "validateLine()" is direct copy from "net/smtp" package.
  *
- * Function-helper "getExtFromClient" is made to extract "ext" property from "net/smtp"."Client" struct using
+ * Function-helper "getExtFromClient()" is made to extract "ext" property from "net/smtp"."Client" struct using
  * reflection. This "ext" property is used in native "net/smtp" package and can't be somehow easily got from struct
  * another way.
  *

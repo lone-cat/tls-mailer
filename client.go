@@ -1,5 +1,6 @@
 package tls_mailer
 
+/*
 import (
 	"errors"
 	"fmt"
@@ -101,3 +102,4 @@ func NewClient(
 
 	return cl, nil
 }
+*/
