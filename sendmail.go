@@ -1,7 +1,7 @@
 package tls_mailer
 
 /*
- * From the code sight main difference from "net/smtp"."SendMail()" is mostly in "Dial" function. Other parts just a bit
+ * from the code sight main difference from "net/smtp"."SendMail()" is mostly in "Dial" function. Other parts just a bit
  * fixed to use unexported field "net/smtp"."Client"."ext" and unexported function "net/smtp"."Client"."hello()".
  * Unexported function has no good way to be used (if you know better way - please contact me), so I used exported
  * "net/smtp"."Client"."Hello()" function instead. It is not exact replacement, but I guess difference is acceptable. At

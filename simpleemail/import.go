@@ -1,4 +1,4 @@
-package emailbuilder
+package simpleemail
 
 import (
 	"encoding/base64"
@@ -18,18 +18,18 @@ func Import(message string) (email Email, err error) {
 		return
 	}
 
-	var part Part
-	part, err = convertMessageToPartRecursive(msg)
+	var convertedPart part
+	convertedPart, err = convertMessageToPartRecursive(msg)
 	if err != nil {
 		return
 	}
 
-	email.Text, email.Html, email.embedded, email.attachments, err = splitPart(part)
+	email.mainPart, email.attachments, err = splitPart(convertedPart)
 	if err != nil {
 		return
 	}
 
-	email.headers, email.From, email.To, email.Cc, email.Bcc, email.Subject, err = proccessHeadersAndExtractPrimaryHeaders(part.GetHeaders())
+	email.headers, email.from, email.to, email.cc, email.bcc, email.subject, err = proccessHeadersAndExtractPrimaryHeaders(convertedPart.getHeaders())
 	if err != nil {
 		return
 	}
@@ -37,15 +37,15 @@ func Import(message string) (email Email, err error) {
 	return
 }
 
-func convertMessageToPartRecursive(msg *mail.Message) (part Part, err error) {
-	part = newPart()
+func convertMessageToPartRecursive(msg *mail.Message) (exportedPart part, err error) {
+	exportedPart = newPart()
 
 	mediaType, params, err := mime.ParseMediaType(msg.Header.Get(ContentTypeHeader))
 	if err != nil {
 		return
 	}
 
-	part = part.WithHeadersFromMap(msg.Header)
+	exportedPart = exportedPart.withHeadersFromMap(msg.Header)
 
 	if !strings.HasPrefix(mediaType, MultipartPrefix) {
 		var msgBodyBytes []byte
@@ -53,23 +53,23 @@ func convertMessageToPartRecursive(msg *mail.Message) (part Part, err error) {
 		if err != nil {
 			return
 		}
-		part = part.WithBody(string(msgBodyBytes))
+		exportedPart = exportedPart.withBody(string(msgBodyBytes))
 
-		transferEncoding := part.headers.GetContentTransferEncoding()
+		transferEncoding := exportedPart.headers.getContentTransferEncoding()
 		if transferEncoding == EncodingQuotedPrintable || transferEncoding == EncodingBase64 {
 			var partBody string
-			partBody, err = extractBodyFromPart(part)
+			partBody, err = extractBodyFromPart(exportedPart)
 			if err != nil {
 				return
 			}
-			part = part.WithBody(partBody)
-			part = part.WithHeaders(part.GetHeaders().WithoutHeader(ContentTransferEncodingHeader))
+			exportedPart = exportedPart.withBody(partBody)
+			exportedPart = exportedPart.withHeaders(exportedPart.getHeaders().withoutHeader(ContentTransferEncodingHeader))
 		}
 
 		return
 	}
 
-	subParts := NewSubParts()
+	convertedSubParts := newSubParts()
 	mr := multipart.NewReader(msg.Body, params["boundary"])
 	var p *multipart.Part
 	for {
@@ -81,25 +81,29 @@ func convertMessageToPartRecursive(msg *mail.Message) (part Part, err error) {
 			return
 		}
 		subMsg := &mail.Message{Header: mail.Header(p.Header), Body: p}
-		var subPart Part
+		var subPart part
 		subPart, err = convertMessageToPartRecursive(subMsg)
 		if err != nil {
 			return
 		}
-		subParts = append(subParts, subPart)
+		convertedSubParts = append(convertedSubParts, subPart)
 	}
 
-	part = part.WithSubParts(subParts)
+	exportedPart = exportedPart.withSubParts(convertedSubParts)
 
-	return part, nil
+	return
 }
 
-func splitPart(part Part) (text string, html string, embedded []Part, attachments []Part, err error) {
+func splitPart(part part) (mainPart mainSubPart, attachments subParts, err error) {
 	var contentType string
-	contentType, err = part.GetHeaders().GetContentType()
+	contentType, err = part.getHeaders().getContentType()
 	if err != nil {
 		return
 	}
+
+	var text, html string
+	embedded := newSubParts()
+	attachments = newSubParts()
 
 	if contentType == MultipartMixed {
 		text, html, embedded, attachments, err = splitMixedPart(part)
@@ -107,40 +111,36 @@ func splitPart(part Part) (text string, html string, embedded []Part, attachment
 
 	if contentType == MultipartRelated {
 		text, html, embedded, err = splitRelatedPart(part)
-		attachments = NewSubParts()
 	}
 
 	if contentType == MultipartAlternative {
 		text, html, err = splitAlternativePart(part)
-		embedded = NewSubParts()
-		attachments = NewSubParts()
 	}
 
 	if contentType == TextPlain {
 		text, err = extractBodyFromPart(part)
-		embedded = NewSubParts()
-		attachments = NewSubParts()
 	}
 
 	if contentType == TextHtml {
 		html, err = extractBodyFromPart(part)
-		embedded = NewSubParts()
-		attachments = NewSubParts()
-
 	}
+
+	mainPart.textSubPart = mainPart.textSubPart.withText(text)
+	mainPart.textSubPart = mainPart.textSubPart.withHtml(html)
+	mainPart.embeddedSubParts = embedded
 
 	return
 }
 
-func splitMixedPart(part Part) (text string, html string, embedded []Part, attachments []Part, err error) {
-	parts := part.GetSubParts()
+func splitMixedPart(part part) (text string, html string, embedded subParts, attachments subParts, err error) {
+	parts := part.getSubParts()
 
 	if len(parts) < 1 {
 		return ``, ``, nil, nil, errors.New(`mixed part is empty`)
 	}
 
 	var contentType string
-	contentType, err = parts[0].GetHeaders().GetContentType()
+	contentType, err = parts[0].getHeaders().getContentType()
 	if err != nil {
 		return
 	}
@@ -159,7 +159,7 @@ func splitMixedPart(part Part) (text string, html string, embedded []Part, attac
 		if err != nil {
 			return
 		}
-		embedded = NewSubParts()
+		embedded = newSubParts()
 		attachments = parts[1:]
 		return
 	}
@@ -169,7 +169,7 @@ func splitMixedPart(part Part) (text string, html string, embedded []Part, attac
 		if err != nil {
 			return
 		}
-		embedded = NewSubParts()
+		embedded = newSubParts()
 		parts = parts[1:]
 		attachments = parts
 	}
@@ -183,7 +183,7 @@ func splitMixedPart(part Part) (text string, html string, embedded []Part, attac
 		if err != nil {
 			return
 		}
-		embedded = NewSubParts()
+		embedded = newSubParts()
 		parts = parts[1:]
 		attachments = parts
 	}
@@ -191,15 +191,15 @@ func splitMixedPart(part Part) (text string, html string, embedded []Part, attac
 	return
 }
 
-func splitRelatedPart(part Part) (text string, html string, embedded []Part, err error) {
-	parts := part.GetSubParts()
+func splitRelatedPart(part part) (text string, html string, embedded subParts, err error) {
+	parts := part.getSubParts()
 
 	if len(parts) < 1 {
 		return ``, ``, nil, errors.New(`related part is empty`)
 	}
 
 	var contentType string
-	contentType, err = parts[0].GetHeaders().GetContentType()
+	contentType, err = parts[0].getHeaders().getContentType()
 	if err != nil {
 		return
 	}
@@ -222,7 +222,7 @@ func splitRelatedPart(part Part) (text string, html string, embedded []Part, err
 	}
 
 	if len(parts) < 1 {
-		embedded = NewSubParts()
+		embedded = newSubParts()
 		return
 	}
 
@@ -239,8 +239,8 @@ func splitRelatedPart(part Part) (text string, html string, embedded []Part, err
 	return
 }
 
-func splitAlternativePart(part Part) (text string, html string, err error) {
-	parts := part.GetSubParts()
+func splitAlternativePart(part part) (text string, html string, err error) {
+	parts := part.getSubParts()
 
 	if len(parts) < 1 {
 		return ``, ``, errors.New(`alternative part is empty`)
@@ -250,10 +250,10 @@ func splitAlternativePart(part Part) (text string, html string, err error) {
 		return ``, ``, errors.New(`alternative part includes more than 2 parts`)
 	}
 
-	attachments := NewSubParts()
+	attachments := newSubParts()
 	for _, part := range parts {
 		var contentType string
-		contentType, err = part.GetHeaders().GetContentType()
+		contentType, err = part.getHeaders().getContentType()
 		if err != nil {
 			return
 		}
@@ -290,8 +290,8 @@ func splitAlternativePart(part Part) (text string, html string, err error) {
 	return
 }
 
-func extractBodyFromPart(part Part) (decodedBody string, err error) {
-	encoding := part.GetHeaders().GetContentTransferEncoding()
+func extractBodyFromPart(part part) (decodedBody string, err error) {
+	encoding := part.getHeaders().getContentTransferEncoding()
 	if encoding == EncodingEmpty || encoding == Encoding7bit || encoding == Encoding8bit || encoding == EncodingBinary {
 		return part.GetBody(), nil
 	}
@@ -318,42 +318,42 @@ func extractBodyFromPart(part Part) (decodedBody string, err error) {
 }
 
 func proccessHeadersAndExtractPrimaryHeaders(oldHeaders Headers) (headers Headers, from []mail.Address, to []mail.Address, cc []mail.Address, bcc []mail.Address, subject string, err error) {
-	headers = oldHeaders.Clone()
+	headers = oldHeaders.clone()
 
 	from = make([]mail.Address, 0)
 	to = make([]mail.Address, 0)
 	cc = make([]mail.Address, 0)
 	bcc = make([]mail.Address, 0)
 
-	if headers.GetFirstHeaderValue(FromHeader) != `` {
-		from, err = headers.GetAddressList(FromHeader)
+	if headers.getFirstHeaderValue(FromHeader) != `` {
+		from, err = headers.getAddressList(FromHeader)
 		if err != nil {
 			return
 		}
 	}
 
-	if headers.GetFirstHeaderValue(ToHeader) != `` {
-		to, err = headers.GetAddressList(ToHeader)
+	if headers.getFirstHeaderValue(ToHeader) != `` {
+		to, err = headers.getAddressList(ToHeader)
 		if err != nil {
 			return
 		}
 	}
 
-	if headers.GetFirstHeaderValue(CCHeader) != `` {
-		cc, err = headers.GetAddressList(CCHeader)
+	if headers.getFirstHeaderValue(CCHeader) != `` {
+		cc, err = headers.getAddressList(CCHeader)
 		if err != nil {
 			return
 		}
 	}
 
-	if headers.GetFirstHeaderValue(BCCHeader) != `` {
-		bcc, err = headers.GetAddressList(BCCHeader)
+	if headers.getFirstHeaderValue(BCCHeader) != `` {
+		bcc, err = headers.getAddressList(BCCHeader)
 		if err != nil {
 			return
 		}
 	}
 
-	subject = headers.GetFirstHeaderValue(SubjectHeader)
+	subject = headers.getFirstHeaderValue(SubjectHeader)
 	if subject != `` {
 		subject, err = decoder.DecodeHeader(subject)
 		if err != nil {
@@ -361,11 +361,11 @@ func proccessHeadersAndExtractPrimaryHeaders(oldHeaders Headers) (headers Header
 		}
 	}
 
-	headers = headers.WithoutHeader(FromHeader).
-		WithoutHeader(ToHeader).
-		WithoutHeader(CCHeader).
-		WithoutHeader(BCCHeader).
-		WithoutHeader(SubjectHeader)
+	headers = headers.withoutHeader(FromHeader).
+		withoutHeader(ToHeader).
+		withoutHeader(CCHeader).
+		withoutHeader(BCCHeader).
+		withoutHeader(SubjectHeader)
 
 	return
 }

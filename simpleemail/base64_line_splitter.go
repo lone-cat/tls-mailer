@@ -1,4 +1,4 @@
-package emailbuilder
+package simpleemail
 
 import "io"
 

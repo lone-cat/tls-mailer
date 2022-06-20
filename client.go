@@ -1,9 +1,9 @@
 package tls_mailer
 
-/*
 import (
 	"errors"
 	"fmt"
+	"github.com/lone-cat/tls-mailer/simpleemail"
 	"net/mail"
 	"net/smtp"
 )
@@ -17,14 +17,20 @@ const (
 	StartTLSClient
 )
 
+const (
+	Undefined = `undefined`
+	TLS       = `TLS`
+	StartTLS  = `STARTTLS`
+)
+
 func (c clientType) String() string {
 	switch c {
 	case TLSClient:
-		return `TLS`
+		return TLS
 	case StartTLSClient:
-		return `STARTTLS`
+		return StartTLS
 	default:
-		return `undefined`
+		return Undefined
 	}
 }
 
@@ -37,16 +43,28 @@ type Client struct {
 	sender     *mail.Address
 }
 
-func (c *Client) Send(email *Email) error {
-	compiledBody, err := email.compile()
+func (c *Client) Send(email EmailForClient) error {
+	err := getFirstBasicEmailValidationError(email, c.sender)
 	if err != nil {
 		return err
 	}
-	to := make([]string, 0)
-	for _, addr := range email.to {
-		to = append(to, addr.Address)
+
+	recipients, err := getValidRecipientsStringList(email.GetRecipients())
+	if err != nil {
+		return err
 	}
-	return c.sendMail(c.server, c.auth, email.from.Address, to, []byte(compiledBody))
+
+	compiledBody, err := email.Compile()
+	if err != nil {
+		return err
+	}
+
+	err = validateEmailBody(compiledBody, c.sender, recipients)
+	if err != nil {
+		return err
+	}
+
+	return c.sendMail(c.server, c.auth, email.GetSender().Address, recipients, compiledBody)
 }
 
 func (c *Client) sendMail(addr string, a smtp.Auth, from string, to []string, msg []byte) error {
@@ -62,26 +80,10 @@ func (c *Client) GetType() string {
 	return c.clientType.String()
 }
 
-func (c *Client) Email(subject string, body string, to ...*mail.Address) (*Email, error) {
-	realTo := make([]*mail.Address, 0)
-
-	for _, addr := range to {
-		if addr != nil {
-			realTo = append(realTo, addr)
-		}
-	}
-
-	if len(realTo) < 1 {
-		return nil, errors.New(`no one reciever passed`)
-	}
-
-	return &Email{
-		headers:  newHeaders(),
-		from:     c.sender,
-		to:       realTo,
-		Subject:  subject,
-		subParts: make([]*part, 0),
-	}, nil
+func (c *Client) Email() simpleemail.Email {
+	newMail := simpleemail.NewEmptyEmail()
+	newMail = newMail.WithFrom([]mail.Address{*c.sender})
+	return newMail
 }
 
 func NewClient(
@@ -92,14 +94,23 @@ func NewClient(
 	password string,
 	sender *mail.Address,
 ) (*Client, error) {
-	auth := smtp.PlainAuth("", user, password, host)
+	if clientType.String() == Undefined {
+		return nil, errors.New(`invalid client type`)
+	}
+	if sender == nil {
+		return nil, errors.New(`nil sender passed to client constructor`)
+	}
+	if sender.Address == `` {
+		return nil, errors.New(`empty sender passed to client constructor`)
+	}
+
+	auth := smtp.PlainAuth(``, user, password, host)
 	cl := &Client{
 		clientType: clientType,
 		server:     fmt.Sprintf(`%s:%d`, host, port),
 		auth:       auth,
-		sender:     sender,
+		sender:     &mail.Address{Name: sender.Name, Address: sender.Address},
 	}
 
 	return cl, nil
 }
-*/

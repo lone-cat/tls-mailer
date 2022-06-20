@@ -1,4 +1,4 @@
-package emailbuilder
+package simpleemail
 
 func copySlice[T any](src []T) []T {
 	dst := make([]T, len(src))

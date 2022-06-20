@@ -1,4 +1,4 @@
-package emailbuilder
+package simpleemail
 
 import (
 	"bytes"
@@ -69,4 +69,12 @@ func fromQuotedPrintable(s string) (string, error) {
 	}
 	res := strings.ReplaceAll(string(result), `_`, ` `)
 	return res, nil
+}
+
+func encodeHeader(headerValue string) string {
+	return mime.QEncoding.Encode("utf-8", headerValue)
+}
+
+func encodedHeaderToMultiline(encodedHeader string) string {
+	return strings.ReplaceAll(encodedHeader, `?= =?`, "?=\r\n =?")
 }
