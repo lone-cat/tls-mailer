@@ -3,6 +3,7 @@ package simpleemail
 import (
 	"encoding/base64"
 	"errors"
+	"github.com/lone-cat/stackerrors"
 	"io"
 	"mime"
 	"mime/multipart"
@@ -12,6 +13,11 @@ import (
 )
 
 func Import(message string) (email Email, err error) {
+	defer func() {
+		err = stackerrors.WrapInDefer(`Import`, err)
+		return
+	}()
+
 	var msg *mail.Message
 	msg, err = mail.ReadMessage(strings.NewReader(message))
 	if err != nil {
@@ -38,6 +44,10 @@ func Import(message string) (email Email, err error) {
 }
 
 func convertMessageToPartRecursive(msg *mail.Message) (exportedPart part, err error) {
+	defer func() {
+		err = stackerrors.WrapInDefer(`convertMessageToPartRecursive`, err)
+		return
+	}()
 	exportedPart = newPart()
 
 	mediaType, params, err := mime.ParseMediaType(msg.Header.Get(ContentTypeHeader))
@@ -75,6 +85,7 @@ func convertMessageToPartRecursive(msg *mail.Message) (exportedPart part, err er
 	for {
 		p, err = mr.NextRawPart()
 		if err == io.EOF {
+			err = nil
 			break
 		}
 		if err != nil {
@@ -95,6 +106,10 @@ func convertMessageToPartRecursive(msg *mail.Message) (exportedPart part, err er
 }
 
 func splitPart(part part) (mainPart mainSubPart, attachments subParts, err error) {
+	defer func() {
+		err = stackerrors.WrapInDefer(`splitPart`, err)
+		return
+	}()
 	var contentType string
 	contentType, err = part.getHeaders().getContentType()
 	if err != nil {
@@ -133,6 +148,10 @@ func splitPart(part part) (mainPart mainSubPart, attachments subParts, err error
 }
 
 func splitMixedPart(part part) (text string, html string, embedded subParts, attachments subParts, err error) {
+	defer func() {
+		err = stackerrors.WrapInDefer(`splitMixedPart`, err)
+		return
+	}()
 	parts := part.getSubParts()
 
 	if len(parts) < 1 {
@@ -192,6 +211,10 @@ func splitMixedPart(part part) (text string, html string, embedded subParts, att
 }
 
 func splitRelatedPart(part part) (text string, html string, embedded subParts, err error) {
+	defer func() {
+		err = stackerrors.WrapInDefer(`splitRelatedPart`, err)
+		return
+	}()
 	parts := part.getSubParts()
 
 	if len(parts) < 1 {
@@ -240,11 +263,14 @@ func splitRelatedPart(part part) (text string, html string, embedded subParts, e
 }
 
 func splitAlternativePart(part part) (text string, html string, err error) {
+	defer func() {
+		err = stackerrors.WrapInDefer(`splitAlternativePart`, err)
+		return
+	}()
 	parts := part.getSubParts()
 
 	if len(parts) < 1 {
 		return ``, ``, errors.New(`alternative part is empty`)
-
 	}
 	if len(parts) > 2 {
 		return ``, ``, errors.New(`alternative part includes more than 2 parts`)
@@ -262,7 +288,7 @@ func splitAlternativePart(part part) (text string, html string, err error) {
 			if text == `` {
 				text, err = extractBodyFromPart(part)
 				if err != nil {
-					return ``, "", err
+					return ``, ``, err
 				}
 				continue
 			} else {
@@ -291,6 +317,10 @@ func splitAlternativePart(part part) (text string, html string, err error) {
 }
 
 func extractBodyFromPart(part part) (decodedBody string, err error) {
+	defer func() {
+		err = stackerrors.WrapInDefer(`extractBodyFromPart`, err)
+		return
+	}()
 	encoding := part.getHeaders().getContentTransferEncoding()
 	if encoding == EncodingEmpty || encoding == Encoding7bit || encoding == Encoding8bit || encoding == EncodingBinary {
 		return part.GetBody(), nil
@@ -318,6 +348,10 @@ func extractBodyFromPart(part part) (decodedBody string, err error) {
 }
 
 func proccessHeadersAndExtractPrimaryHeaders(oldHeaders Headers) (headers Headers, from []mail.Address, to []mail.Address, cc []mail.Address, bcc []mail.Address, subject string, err error) {
+	defer func() {
+		err = stackerrors.WrapInDefer(`proccessHeadersAndExtractPrimaryHeaders`, err)
+		return
+	}()
 	headers = oldHeaders.clone()
 
 	from = make([]mail.Address, 0)

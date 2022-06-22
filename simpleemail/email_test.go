@@ -2,6 +2,7 @@ package simpleemail_test
 
 import (
 	"fmt"
+	"github.com/lone-cat/stackerrors"
 	"github.com/lone-cat/tls-mailer/simpleemail"
 	"testing"
 )
@@ -32,12 +33,16 @@ func TestMainFunc(t *testing.T) {
 	fmt.Println(email)
 	fmt.Println(err)
 	*/
-	email, err := simpleemail.Import(exampleShort)
+	email, err := simpleemail.Import(exampleTextAndHtml)
 	if err != nil {
-		panic(err)
+		er := err.(*stackerrors.DebugContextError)
+		for er != nil {
+			fmt.Println(er.Line())
+			er = er.Unwrap().(*stackerrors.DebugContextError)
+		}
 	}
-
+	return
 	fmt.Println(email.String())
-	fmt.Println(exampleShort)
-	fmt.Println(email.String() == exampleShort)
+	fmt.Println(exampleTextAndHtml)
+	fmt.Println(email.String() == exampleTextAndHtml)
 }
