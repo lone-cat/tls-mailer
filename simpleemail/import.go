@@ -15,7 +15,6 @@ import (
 func Import(message string) (email Email, err error) {
 	defer func() {
 		err = stackerrors.WrapInDefer(`Import`, err)
-		return
 	}()
 
 	var msg *mail.Message
@@ -46,7 +45,6 @@ func Import(message string) (email Email, err error) {
 func convertMessageToPartRecursive(msg *mail.Message) (exportedPart part, err error) {
 	defer func() {
 		err = stackerrors.WrapInDefer(`convertMessageToPartRecursive`, err)
-		return
 	}()
 	exportedPart = newPart()
 
@@ -108,7 +106,6 @@ func convertMessageToPartRecursive(msg *mail.Message) (exportedPart part, err er
 func splitPart(part part) (mainPart mainSubPart, attachments subParts, err error) {
 	defer func() {
 		err = stackerrors.WrapInDefer(`splitPart`, err)
-		return
 	}()
 	var contentType string
 	contentType, err = part.getHeaders().getContentType()
@@ -150,7 +147,6 @@ func splitPart(part part) (mainPart mainSubPart, attachments subParts, err error
 func splitMixedPart(part part) (text string, html string, embedded subParts, attachments subParts, err error) {
 	defer func() {
 		err = stackerrors.WrapInDefer(`splitMixedPart`, err)
-		return
 	}()
 	parts := part.getSubParts()
 
@@ -213,7 +209,6 @@ func splitMixedPart(part part) (text string, html string, embedded subParts, att
 func splitRelatedPart(part part) (text string, html string, embedded subParts, err error) {
 	defer func() {
 		err = stackerrors.WrapInDefer(`splitRelatedPart`, err)
-		return
 	}()
 	parts := part.getSubParts()
 
@@ -265,7 +260,6 @@ func splitRelatedPart(part part) (text string, html string, embedded subParts, e
 func splitAlternativePart(part part) (text string, html string, err error) {
 	defer func() {
 		err = stackerrors.WrapInDefer(`splitAlternativePart`, err)
-		return
 	}()
 	parts := part.getSubParts()
 
@@ -319,7 +313,6 @@ func splitAlternativePart(part part) (text string, html string, err error) {
 func extractBodyFromPart(part part) (decodedBody string, err error) {
 	defer func() {
 		err = stackerrors.WrapInDefer(`extractBodyFromPart`, err)
-		return
 	}()
 	encoding := part.getHeaders().getContentTransferEncoding()
 	if encoding == EncodingEmpty || encoding == Encoding7bit || encoding == Encoding8bit || encoding == EncodingBinary {
@@ -350,7 +343,6 @@ func extractBodyFromPart(part part) (decodedBody string, err error) {
 func proccessHeadersAndExtractPrimaryHeaders(oldHeaders Headers) (headers Headers, from []mail.Address, to []mail.Address, cc []mail.Address, bcc []mail.Address, subject string, err error) {
 	defer func() {
 		err = stackerrors.WrapInDefer(`proccessHeadersAndExtractPrimaryHeaders`, err)
-		return
 	}()
 	headers = oldHeaders.clone()
 

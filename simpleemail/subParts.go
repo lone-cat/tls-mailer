@@ -1,5 +1,7 @@
 package simpleemail
 
+import "fmt"
+
 type subParts []part
 
 func newSubParts() subParts {
@@ -14,6 +16,9 @@ func (s subParts) clone() subParts {
 	return clonedSubParts
 }
 
+var i = 1
+
 func generateBoundary() string {
-	return `bound`
+	i++
+	return fmt.Sprintf(`bound%d`, i)
 }

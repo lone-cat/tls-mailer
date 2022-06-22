@@ -7,6 +7,8 @@ import (
 	"net/mail"
 )
 
+// pre-send validations for email message
+
 func getFirstBasicEmailValidationError(email EmailForClient, clientSender *mail.Address) error {
 	if email == nil {
 		return errors.New(`nil email passed`)

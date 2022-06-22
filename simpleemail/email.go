@@ -36,6 +36,34 @@ func NewEmptyEmail() Email {
 	}
 }
 
+func (e Email) GetFrom() []mail.Address {
+	return e.from.clone()
+}
+
+func (e Email) GetTo() []mail.Address {
+	return e.to.clone()
+}
+
+func (e Email) GetCc() []mail.Address {
+	return e.cc.clone()
+}
+
+func (e Email) GetBcc() []mail.Address {
+	return e.bcc.clone()
+}
+
+func (e Email) GetSubject() string {
+	return e.subject
+}
+
+func (e Email) GetText() string {
+	return e.mainPart.textSubPart.textPart.body
+}
+
+func (e Email) GetHtml() string {
+	return e.mainPart.textSubPart.htmlPart.body
+}
+
 func (e Email) WithFrom(from []mail.Address) Email {
 	newEmail := e.clone()
 	newEmail.from = from
