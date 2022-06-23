@@ -18,11 +18,11 @@ func convertMessageToPartRecursive(msg *mail.Message) (exportedPart part, err er
 	}()
 
 	mediaType, params, err := mime.ParseMediaType(msg.Header.Get(ContentTypeHeader))
-	if err != nil {
-		return
-	}
 
 	if strings.HasPrefix(mediaType, MultipartPrefix) {
+		if err != nil {
+			return
+		}
 		exportedPart, err = convertMultipartMsgToPart(msg, params[`boundary`])
 	} else {
 		exportedPart, err = convertSimpleMsgToPart(msg)
