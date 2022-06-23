@@ -14,54 +14,54 @@ func newAlternativeSubPart() alternativeSubPart {
 	}
 }
 
-func (t alternativeSubPart) clone() alternativeSubPart {
+func (p alternativeSubPart) clone() alternativeSubPart {
 	clonedPart := newAlternativeSubPart()
-	clonedPart.headers = t.headers.clone()
-	clonedPart.textPart = t.textPart.clone()
-	clonedPart.htmlPart = t.htmlPart.clone()
+	clonedPart.headers = p.headers.clone()
+	clonedPart.textPart = p.textPart.clone()
+	clonedPart.htmlPart = p.htmlPart.clone()
 	return clonedPart
 }
 
-func (t alternativeSubPart) withText(text string) alternativeSubPart {
-	clonedPart := t.clone()
+func (p alternativeSubPart) withText(text string) alternativeSubPart {
+	clonedPart := p.clone()
 	clonedPart.textPart = clonedPart.textPart.withBody(text)
 	return clonedPart
 }
 
-func (t alternativeSubPart) withHtml(html string) alternativeSubPart {
-	clonedPart := t.clone()
+func (p alternativeSubPart) withHtml(html string) alternativeSubPart {
+	clonedPart := p.clone()
 	clonedPart.htmlPart = clonedPart.htmlPart.withBody(html)
 	return clonedPart
 }
 
-func (t alternativeSubPart) isTextEmpty() bool {
-	return t.textPart.body == ``
+func (p alternativeSubPart) isTextEmpty() bool {
+	return p.textPart.body == ``
 }
 
-func (t alternativeSubPart) isHtmlEmpty() bool {
-	return t.htmlPart.body == ``
+func (p alternativeSubPart) isHtmlEmpty() bool {
+	return p.htmlPart.body == ``
 }
 
-func (t alternativeSubPart) isEmpty() bool {
-	return t.isTextEmpty() && t.isHtmlEmpty()
+func (p alternativeSubPart) isEmpty() bool {
+	return p.isTextEmpty() && p.isHtmlEmpty()
 }
 
-func (t alternativeSubPart) toPart() part {
-	if t.isEmpty() {
+func (p alternativeSubPart) toPart() part {
+	if p.isEmpty() {
 		return newPart()
 	}
 
-	if t.isHtmlEmpty() {
-		return t.textPart.clone()
+	if p.isHtmlEmpty() {
+		return p.textPart.clone()
 	}
 
-	if t.isTextEmpty() {
-		return t.htmlPart.clone()
+	if p.isTextEmpty() {
+		return p.htmlPart.clone()
 	}
 
 	exportedPart := newPart()
-	exportedPart.headers = t.headers.clone()
-	exportedPart.subParts = []part{t.textPart.clone(), t.htmlPart.clone()}
+	exportedPart.headers = p.headers.clone()
+	exportedPart.subParts = []part{p.textPart.clone(), p.htmlPart.clone()}
 	if !exportedPart.headers.isMultipart() {
 		exportedPart.headers = exportedPart.headers.withHeader(`Content-Type`, MultipartAlternative)
 	}
@@ -69,6 +69,6 @@ func (t alternativeSubPart) toPart() part {
 	return exportedPart
 }
 
-func (t alternativeSubPart) compile() ([]byte, error) {
-	return t.toPart().compile()
+func (p alternativeSubPart) compile() ([]byte, error) {
+	return p.toPart().compile()
 }

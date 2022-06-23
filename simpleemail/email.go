@@ -244,22 +244,15 @@ func (e Email) clone() Email {
 }
 
 func (e Email) toPart() part {
-	allSubParts := e.attachments.clone()
-	if !e.mainPart.isEmpty() {
-		allSubParts = append([]part{e.mainPart.toPart()}, allSubParts...)
-	}
+	mainPart := e.mainPart.toPart()
 
-	if len(allSubParts) == 0 {
-		return newPart()
-	}
-
-	if len(allSubParts) == 1 {
-		return allSubParts[0]
+	if len(e.attachments) < 1 {
+		return mainPart
 	}
 
 	exportedPart := newPart()
 	exportedPart.headers = e.headers.clone()
-	exportedPart.subParts = allSubParts
+	exportedPart.subParts = append([]part{mainPart}, e.attachments...)
 	if !exportedPart.headers.isMultipart() {
 		exportedPart.headers = exportedPart.headers.withHeader(`Content-Type`, MultipartMixed)
 	}

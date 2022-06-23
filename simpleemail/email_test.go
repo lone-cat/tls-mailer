@@ -32,6 +32,9 @@ func TestMainFunc(t *testing.T) {
 	fmt.Println(email)
 	fmt.Println(err)
 	*/
+	email := simpleemail.NewEmptyEmail().WithAttachedString(`wtf`).WithTo(to)
+	fmt.Println(email.String())
+	return
 	email, err := simpleemail.Import(exampleTextAndHtml)
 	if err != nil {
 		fmt.Println(err)
