@@ -1,41 +1,97 @@
 package simpleemail_test
 
 import (
+	"fmt"
 	"github.com/lone-cat/tls-mailer/simpleemail"
-	"net/mail"
 	"testing"
 )
 
-var (
-	addr1 = mail.Address{Name: `Иванов Иван`, Address: `first@email.addr`}
-	addr2 = mail.Address{Name: `Петров Петр`, Address: `second@email.addr`}
-	addr3 = mail.Address{Name: `Сидоров Сидор`, Address: `third@email.addr`}
-	addr4 = mail.Address{Name: `Иванов Петр`, Address: `fourth@email.addr`}
-	addr5 = mail.Address{Name: `Иванов Сидор`, Address: `fifth@email.addr`}
-	addr6 = mail.Address{Name: `Петров Иван`, Address: `sixth@email.addr`}
-	addr7 = mail.Address{Name: `Петров Сидор`, Address: `seventh@email.addr`}
-	addr8 = mail.Address{Name: `Сидоров Иван`, Address: `eighth@email.addr`}
-	addr9 = mail.Address{Name: `Сидоров Петр`, Address: `ninth@email.addr`}
-)
-
-var (
-	from = []mail.Address{addr1, addr2}
-	to   = []mail.Address{addr2, addr3, addr4, addr5}
-	cc   = []mail.Address{addr6, addr7, addr8}
-	bcc  = []mail.Address{addr9, addr1}
-
-	subject = "Какая то странная длинная тема s angliiskimi simvolami так чтобы \r\nточно поместилась только на несколько строк"
-
-	text = `Какой то не менее длинный текст, чтобы он тоже был на несколько строк, но при этом еще длиннее чем предыдущий` + "\r\n" +
-		`Кстати, этот текст еще и будет иметь перевод строки. Tak zhe on soderzhit английские буквы )`
-	html = `<h1>Здесь длина текста уже не будет иметь значения</h1>`
-
-	embedded = `aaa`
-
-	attached = `bbb`
-)
+func TestEmpty(t *testing.T) {
+	email := simpleemail.NewEmptyEmail()
+	if email.GetText() != `` {
+		fmt.Printf("`Text` is `%s` in empty email\r\n", email.GetText())
+		t.Fail()
+	}
+	if email.GetHtml() != `` {
+		fmt.Printf("`Html` is `%s` in empty email\r\n", email.GetHtml())
+		t.Fail()
+	}
+	if email.GetSubject() != `` {
+		fmt.Printf("`Subject` is `%s` in empty email\r\n", email.GetSubject())
+		t.Fail()
+	}
+	if len(email.GetFrom()) > 0 {
+		fmt.Printf("`From` contains %#v instead of empty list\r\n", email.GetFrom())
+		t.Fail()
+	}
+	if len(email.GetTo()) > 0 {
+		fmt.Printf("`To` contains %#v instead of empty list\r\n", email.GetTo())
+		t.Fail()
+	}
+	if len(email.GetCc()) > 0 {
+		fmt.Printf("`Cc` contains %#v instead of empty list\r\n", email.GetCc())
+		t.Fail()
+	}
+	if len(email.GetBcc()) > 0 {
+		fmt.Printf("`Bcc` contains %#v instead of empty list\r\n", email.GetBcc())
+		t.Fail()
+	}
+	if len(email.GetEmbedded()) > 0 {
+		fmt.Println("`Embedded` list is not empty in empty email")
+		t.Fail()
+	}
+	if len(email.GetAttachments()) > 0 {
+		fmt.Println("`Attachments` list is not empty in empty email")
+		t.Fail()
+	}
+}
 
 func TestFill(t *testing.T) {
-	email := simpleemail.NewEmptyEmail()
-	email.GetText()
+	email := simpleemail.NewEmptyEmail().
+		WithText(text).
+		WithHtml(html).
+		WithSubject(subject).
+		WithFrom(from).
+		WithTo(to).
+		WithCc(cc).
+		WithBcc(bcc).
+		WithEmbeddedString(embedded).
+		WithAttachedString(attached)
+
+	if email.GetText() != text {
+		fmt.Printf("`Text` filled incorrectly. expected %#v, got %#v\r\n", text, email.GetText())
+		t.Fail()
+	}
+	if email.GetHtml() != html {
+		fmt.Printf("`Html` filled incorrectly. expected %#v, got %#v\r\n", html, email.GetHtml())
+		t.Fail()
+	}
+	if email.GetSubject() != subject {
+		fmt.Printf("`Subject` filled incorrectly. expected %#v, got %#v\r\n", subject, email.GetSubject())
+		t.Fail()
+	}
+	if !addressSlicesEqual(email.GetFrom(), from) {
+		fmt.Printf("`From` filled incorrectly. expected %#v, got %#v\r\n", from, email.GetFrom())
+		t.Fail()
+	}
+	if !addressSlicesEqual(email.GetTo(), to) {
+		fmt.Printf("`To` filled incorrectly. expected %#v, got %#v\r\n", to, email.GetTo())
+		t.Fail()
+	}
+	if !addressSlicesEqual(email.GetCc(), cc) {
+		fmt.Printf("`Cc` filled incorrectly. expected %#v, got %#v\r\n", cc, email.GetCc())
+		t.Fail()
+	}
+	if !addressSlicesEqual(email.GetBcc(), bcc) {
+		fmt.Printf("`Bcc` filled incorrectly. expected %#v, got %#v\r\n", bcc, email.GetBcc())
+		t.Fail()
+	}
+	if email.GetEmbedded()[0].GetBody() != embedded {
+		fmt.Printf("`Embedded body` filled incorrectly. expected %#v, got %#v\r\n", embedded, email.GetEmbedded()[0].GetBody())
+		t.Fail()
+	}
+	if email.GetAttachments()[0].GetBody() != attached {
+		fmt.Printf("`Attached body` filled incorrectly. expected %#v, got %#v\r\n", attached, email.GetAttachments()[0].GetBody())
+		t.Fail()
+	}
 }

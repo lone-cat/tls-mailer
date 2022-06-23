@@ -40,73 +40,13 @@ func convertAddressSliceToMapByEmail(addressSlice []mail.Address) map[string]mai
 	return result
 }
 
-var (
-	emptyEmail = simpleemail.NewEmptyEmail().
-		WithFrom(from).
-		WithTo(to).
-		WithCc(cc).
-		WithBcc(bcc).
-		WithSubject(subject)
-)
-
-func TestRoundTripHeaders(t *testing.T) {
-	email := emptyEmail
-
-	emailString := email.String()
-
-	importedEmail, err := simpleemail.Import(emailString)
-	if err != nil {
-		fmt.Println(`import failed:`)
-		fmt.Println(err)
-		t.FailNow()
-	}
-
-	importedFrom := importedEmail.GetFrom()
-	if !addressSlicesEqual(from, importedFrom) {
-		fmt.Printf("`From` corrupted. expected %#v, got %#v\r\n", from, importedFrom)
-		t.Fail()
-	}
-
-	importedTo := importedEmail.GetTo()
-	if !addressSlicesEqual(to, importedTo) {
-		fmt.Printf("`To` corrupted. expected %#v, got %#v\r\n", to, importedTo)
-		t.Fail()
-	}
-
-	importedCc := importedEmail.GetCc()
-	if !addressSlicesEqual(cc, importedCc) {
-		fmt.Printf("`Cc` corrupted. expected %#v, got %#v\r\n", cc, importedCc)
-		t.Fail()
-	}
-
-	importedBcc := importedEmail.GetBcc()
-	if !addressSlicesEqual(bcc, importedBcc) {
-		fmt.Printf("`Bcc` corrupted. expected %#v, got %#v\r\n", bcc, importedBcc)
-		t.Fail()
-	}
-
-	importedSubject := importedEmail.GetSubject()
-	if importedSubject != subject {
-		fmt.Printf("`Subject` corrupted. expected \"%s\", got \"%s\"\r\n", subject, importedSubject)
-		t.Fail()
-	}
-
-	importedEmailString := importedEmail.String()
-	if emailString != importedEmailString {
-		fmt.Println(`twice converted email does not match:`)
-		fmt.Println(`--- original ---`)
-		fmt.Println(emailString)
-		fmt.Println(`--- reconstructed ---`)
-		fmt.Println(importedEmailString)
-		fmt.Println(`--- end ---`)
-		t.Fail()
+func TestRoundTrip(t *testing.T) {
+	for _, em := range emailsForTest {
+		testCompare(em, t)
 	}
 }
 
-func TestRoundTripText(t *testing.T) {
-	email := emptyEmail.
-		WithText(text)
-
+func testCompare(email simpleemail.Email, t *testing.T) {
 	emailString := email.String()
 
 	importedEmail, err := simpleemail.Import(emailString)
@@ -116,306 +56,54 @@ func TestRoundTripText(t *testing.T) {
 		t.FailNow()
 	}
 
-	importedText := importedEmail.GetText()
-	if importedText != text {
-		fmt.Printf("`text` corrupted. expected \"%s\", got \"%s\"\r\n", text, importedText)
+	if !addressSlicesEqual(email.GetFrom(), importedEmail.GetFrom()) {
+		fmt.Printf("`From` does not match: expected %#v, got %#v\r\n", email.GetFrom(), importedEmail.GetFrom())
 		t.Fail()
 	}
-
-	importedEmailString := importedEmail.String()
-	if emailString != importedEmailString {
-		fmt.Println(`twice converted email does not match:`)
-		fmt.Println(`--- original ---`)
-		fmt.Println(emailString)
-		fmt.Println(`--- reconstructed ---`)
-		fmt.Println(importedEmailString)
-		fmt.Println(`--- end ---`)
+	if !addressSlicesEqual(email.GetTo(), importedEmail.GetTo()) {
+		fmt.Printf("`To` does not match: expected %#v, got %#v\r\n", email.GetTo(), importedEmail.GetTo())
 		t.Fail()
 	}
-}
-
-func TestRoundTripHtml(t *testing.T) {
-	email := emptyEmail.
-		WithHtml(html)
-
-	emailString := email.String()
-
-	importedEmail, err := simpleemail.Import(emailString)
-	if err != nil {
-		fmt.Println(`import failed:`)
-		fmt.Println(err)
-		t.FailNow()
-	}
-
-	importedHtml := importedEmail.GetHtml()
-	if importedHtml != html {
-		fmt.Printf("`html` corrupted. expected \"%s\", got \"%s\"\r\n", html, importedHtml)
+	if !addressSlicesEqual(email.GetCc(), importedEmail.GetCc()) {
+		fmt.Printf("`Cc` does not match: expected %#v, got %#v\r\n", email.GetCc(), importedEmail.GetCc())
 		t.Fail()
 	}
-
-	importedEmailString := importedEmail.String()
-	if emailString != importedEmailString {
-		fmt.Println(`twice converted email does not match:`)
-		fmt.Println(`--- original ---`)
-		fmt.Println(emailString)
-		fmt.Println(`--- reconstructed ---`)
-		fmt.Println(importedEmailString)
-		fmt.Println(`--- end ---`)
+	if !addressSlicesEqual(email.GetBcc(), importedEmail.GetBcc()) {
+		fmt.Printf("`Bcc` does not match: expected %#v, got %#v\r\n", email.GetBcc(), importedEmail.GetBcc())
 		t.Fail()
 	}
-}
-
-func TestRoundTripTextAndHtml(t *testing.T) {
-	email := emptyEmail.
-		WithText(text).
-		WithHtml(html)
-
-	emailString := email.String()
-
-	importedEmail, err := simpleemail.Import(emailString)
-	if err != nil {
-		fmt.Println(`import failed:`)
-		fmt.Println(err)
-		t.FailNow()
-	}
-
-	importedText := importedEmail.GetText()
-	if importedText != text {
-		fmt.Printf("`text` corrupted. expected \"%s\", got \"%s\"\r\n", text, importedText)
+	if email.GetSubject() != importedEmail.GetSubject() {
+		fmt.Printf("`subject` does not match: expected `%s`, got `%s`\r\n", email.GetSubject(), importedEmail.GetSubject())
 		t.Fail()
 	}
-
-	importedHtml := importedEmail.GetHtml()
-	if importedHtml != html {
-		fmt.Printf("`html` corrupted. expected \"%s\", got \"%s\"\r\n", html, importedHtml)
+	if email.GetText() != importedEmail.GetText() {
+		fmt.Printf("`text` does not match: expected `%s`, got `%s`\r\n", email.GetText(), importedEmail.GetText())
 		t.Fail()
 	}
-
-	importedEmailString := importedEmail.String()
-	if emailString != importedEmailString {
-		fmt.Println(`twice converted email does not match:`)
-		fmt.Println(`--- original ---`)
-		fmt.Println(emailString)
-		fmt.Println(`--- reconstructed ---`)
-		fmt.Println(importedEmailString)
-		fmt.Println(`--- end ---`)
+	if email.GetHtml() != importedEmail.GetHtml() {
+		fmt.Printf("`html` does not match: expected `%s`, got `%s`\r\n", email.GetHtml(), importedEmail.GetHtml())
 		t.Fail()
 	}
-}
-
-func TestRoundTripTextAndHtmlAndEmbedded(t *testing.T) {
-	email := emptyEmail.
-		WithText(text).
-		WithHtml(html).
-		WithEmbeddedString(embedded)
-
-	emailString := email.String()
-
-	importedEmail, err := simpleemail.Import(emailString)
-	if err != nil {
-		fmt.Println(`import failed:`)
-		fmt.Println(err)
-		t.FailNow()
-	}
-
-	importedText := importedEmail.GetText()
-	if importedText != text {
-		fmt.Printf("`text` corrupted. expected \"%s\", got \"%s\"\r\n", text, importedText)
-		t.Fail()
-	}
-
-	importedHtml := importedEmail.GetHtml()
-	if importedHtml != html {
-		fmt.Printf("`html` corrupted. expected \"%s\", got \"%s\"\r\n", html, importedHtml)
-		t.Fail()
-	}
-
-	importedEmbeddedParts := importedEmail.GetEmbedded()
-	if len(importedEmbeddedParts) < 1 {
-		fmt.Printf("no embedded parts\r\n")
+	if len(email.GetEmbedded()) != len(importedEmail.GetEmbedded()) {
+		fmt.Printf("`Embedded` count does not match: expected `%d`, got `%d`\r\n", len(email.GetEmbedded()), len(importedEmail.GetEmbedded()))
 		t.Fail()
 	} else {
-		embeddedPart1 := importedEmbeddedParts[0]
-		importedEmbedded := embeddedPart1.GetBody()
-		if embedded != importedEmbedded {
-			fmt.Printf("`embedded` corrupted. expected \"%s\", got \"%s\"\r\n", embedded, importedEmbedded)
-			t.Fail()
+		if len(email.GetEmbedded()) > 0 {
+			if email.GetEmbedded()[0].GetBody() != importedEmail.GetEmbedded()[0].GetBody() {
+				fmt.Printf("`Embedded` body does not match: expected `%s`, got `%s`\r\n", email.GetEmbedded()[0].GetBody(), importedEmail.GetEmbedded()[0].GetBody())
+				t.Fail()
+			}
 		}
 	}
-
-	importedEmailString := importedEmail.String()
-	if emailString != importedEmailString {
-		fmt.Println(`twice converted email does not match:`)
-		fmt.Println(`--- original ---`)
-		fmt.Println(emailString)
-		fmt.Println(`--- reconstructed ---`)
-		fmt.Println(importedEmailString)
-		fmt.Println(`--- end ---`)
-		t.Fail()
-	}
-}
-
-func TestRoundTripTextAndHtmlAndEmbeddedAndAttachment(t *testing.T) {
-	email := emptyEmail.
-		WithText(text).
-		WithHtml(html).
-		WithEmbeddedString(embedded).
-		WithAttachedString(attached)
-
-	emailString := email.String()
-
-	importedEmail, err := simpleemail.Import(emailString)
-	if err != nil {
-		fmt.Println(`import failed:`)
-		fmt.Println(err)
-		t.FailNow()
-	}
-
-	importedText := importedEmail.GetText()
-	if importedText != text {
-		fmt.Printf("`text` corrupted. expected \"%s\", got \"%s\"\r\n", text, importedText)
-		t.Fail()
-	}
-
-	importedHtml := importedEmail.GetHtml()
-	if importedHtml != html {
-		fmt.Printf("`html` corrupted. expected \"%s\", got \"%s\"\r\n", html, importedHtml)
-		t.Fail()
-	}
-
-	importedEmbeddedParts := importedEmail.GetEmbedded()
-	if len(importedEmbeddedParts) < 1 {
-		fmt.Printf("no embedded parts\r\n")
+	if len(email.GetAttachments()) != len(importedEmail.GetAttachments()) {
+		fmt.Printf("`Attachments` count does not match: expected `%d`, got `%d`\r\n", len(email.GetAttachments()), len(importedEmail.GetAttachments()))
 		t.Fail()
 	} else {
-		embeddedPart1 := importedEmbeddedParts[0]
-		importedEmbedded := embeddedPart1.GetBody()
-		if embedded != importedEmbedded {
-			fmt.Printf("`embedded` corrupted. expected \"%s\", got \"%s\"\r\n", embedded, importedEmbedded)
-			t.Fail()
+		if len(email.GetAttachments()) > 0 {
+			if email.GetAttachments()[0].GetBody() != importedEmail.GetAttachments()[0].GetBody() {
+				fmt.Printf("`Attachments` body does not match: expected `%s`, got `%s`\r\n", email.GetAttachments()[0].GetBody(), importedEmail.GetAttachments()[0].GetBody())
+				t.Fail()
+			}
 		}
 	}
-
-	importedAttachedParts := importedEmail.GetAttachments()
-	if len(importedAttachedParts) < 1 {
-		fmt.Printf("no attached parts\r\n")
-		t.Fail()
-	} else {
-		attachedPart1 := importedAttachedParts[0]
-		importAttached := attachedPart1.GetBody()
-		if attached != importAttached {
-			fmt.Printf("`attached` corrupted. expected \"%s\", got \"%s\"\r\n", attached, importAttached)
-			t.Fail()
-		}
-	}
-
-	importedEmailString := importedEmail.String()
-	if emailString != importedEmailString {
-		fmt.Println(`twice converted email does not match:`)
-		fmt.Println(`--- original ---`)
-		fmt.Println(emailString)
-		fmt.Println(`--- reconstructed ---`)
-		fmt.Println(importedEmailString)
-		fmt.Println(`--- end ---`)
-		t.Fail()
-	}
-	//email.GetSubject()
-}
-
-func TestRoundTripFull(t *testing.T) {
-
-	email := emptyEmail.
-		WithText(text).
-		WithHtml(html).
-		WithEmbeddedString(embedded).
-		WithAttachedString(attached)
-
-	emailString := email.String()
-
-	importedEmail, err := simpleemail.Import(emailString)
-	if err != nil {
-		fmt.Println(`import failed:`)
-		fmt.Println(err)
-		t.FailNow()
-	}
-
-	importedFrom := importedEmail.GetFrom()
-	if !addressSlicesEqual(from, importedFrom) {
-		fmt.Printf("`From` corrupted. expected %#v, got %#v\r\n", from, importedFrom)
-		t.Fail()
-	}
-
-	importedTo := importedEmail.GetTo()
-	if !addressSlicesEqual(to, importedTo) {
-		fmt.Printf("`To` corrupted. expected %#v, got %#v\r\n", to, importedTo)
-		t.Fail()
-	}
-
-	importedCc := importedEmail.GetCc()
-	if !addressSlicesEqual(cc, importedCc) {
-		fmt.Printf("`Cc` corrupted. expected %#v, got %#v\r\n", cc, importedCc)
-		t.Fail()
-	}
-
-	importedBcc := importedEmail.GetBcc()
-	if !addressSlicesEqual(bcc, importedBcc) {
-		fmt.Printf("`Bcc` corrupted. expected %#v, got %#v\r\n", bcc, importedBcc)
-		t.Fail()
-	}
-
-	importedSubject := importedEmail.GetSubject()
-	if importedSubject != subject {
-		fmt.Printf("`Subject` corrupted. expected \"%s\", got \"%s\"\r\n", subject, importedSubject)
-		t.Fail()
-	}
-
-	importedText := importedEmail.GetText()
-	if importedText != text {
-		fmt.Printf("`text` corrupted. expected \"%s\", got \"%s\"\r\n", text, importedText)
-		t.Fail()
-	}
-
-	importedHtml := importedEmail.GetHtml()
-	if importedHtml != html {
-		fmt.Printf("`html` corrupted. expected \"%s\", got \"%s\"\r\n", html, importedHtml)
-		t.Fail()
-	}
-
-	importedEmbeddedParts := importedEmail.GetEmbedded()
-	if len(importedEmbeddedParts) < 1 {
-		fmt.Printf("no embedded parts\r\n")
-		t.Fail()
-	} else {
-		embeddedPart1 := importedEmbeddedParts[0]
-		importedEmbedded := embeddedPart1.GetBody()
-		if embedded != importedEmbedded {
-			fmt.Printf("`embedded` corrupted. expected \"%s\", got \"%s\"\r\n", embedded, importedEmbedded)
-			t.Fail()
-		}
-	}
-
-	importedAttachedParts := importedEmail.GetAttachments()
-	if len(importedAttachedParts) < 1 {
-		fmt.Printf("no attached parts\r\n")
-		t.Fail()
-	} else {
-		attachedPart1 := importedAttachedParts[0]
-		importAttached := attachedPart1.GetBody()
-		if attached != importAttached {
-			fmt.Printf("`attached` corrupted. expected \"%s\", got \"%s\"\r\n", attached, importAttached)
-			t.Fail()
-		}
-	}
-
-	importedEmailString := importedEmail.String()
-	if emailString != importedEmailString {
-		fmt.Println(`twice converted email does not match:`)
-		fmt.Println(`--- original ---`)
-		fmt.Println(emailString)
-		fmt.Println(`--- reconstructed ---`)
-		fmt.Println(importedEmailString)
-		fmt.Println(`--- end ---`)
-		t.Fail()
-	}
-	//email.GetSubject()
 }
