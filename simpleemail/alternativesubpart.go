@@ -1,52 +1,52 @@
 package simpleemail
 
-type textSubPart struct {
+type alternativeSubPart struct {
 	headers  Headers
 	textPart part
 	htmlPart part
 }
 
-func newTextSubPart() textSubPart {
-	return textSubPart{
+func newAlternativeSubPart() alternativeSubPart {
+	return alternativeSubPart{
 		headers:  newHeaders(),
 		textPart: newPart(),
 		htmlPart: newPart(),
 	}
 }
 
-func (t textSubPart) clone() textSubPart {
-	clonedPart := newTextSubPart()
+func (t alternativeSubPart) clone() alternativeSubPart {
+	clonedPart := newAlternativeSubPart()
 	clonedPart.headers = t.headers.clone()
 	clonedPart.textPart = t.textPart.clone()
 	clonedPart.htmlPart = t.htmlPart.clone()
 	return clonedPart
 }
 
-func (t textSubPart) withText(text string) textSubPart {
+func (t alternativeSubPart) withText(text string) alternativeSubPart {
 	clonedPart := t.clone()
 	clonedPart.textPart = clonedPart.textPart.withBody(text)
 	return clonedPart
 }
 
-func (t textSubPart) withHtml(html string) textSubPart {
+func (t alternativeSubPart) withHtml(html string) alternativeSubPart {
 	clonedPart := t.clone()
 	clonedPart.htmlPart = clonedPart.htmlPart.withBody(html)
 	return clonedPart
 }
 
-func (t textSubPart) isTextEmpty() bool {
+func (t alternativeSubPart) isTextEmpty() bool {
 	return t.textPart.body == ``
 }
 
-func (t textSubPart) isHtmlEmpty() bool {
+func (t alternativeSubPart) isHtmlEmpty() bool {
 	return t.htmlPart.body == ``
 }
 
-func (t textSubPart) isEmpty() bool {
+func (t alternativeSubPart) isEmpty() bool {
 	return t.isTextEmpty() && t.isHtmlEmpty()
 }
 
-func (t textSubPart) toPart() part {
+func (t alternativeSubPart) toPart() part {
 	if t.isEmpty() {
 		return newPart()
 	}
@@ -69,6 +69,6 @@ func (t textSubPart) toPart() part {
 	return exportedPart
 }
 
-func (t textSubPart) compile() ([]byte, error) {
+func (t alternativeSubPart) compile() ([]byte, error) {
 	return t.toPart().compile()
 }

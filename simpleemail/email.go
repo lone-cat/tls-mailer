@@ -16,7 +16,7 @@ type Email struct {
 
 	subject string
 
-	mainPart mainSubPart
+	mainPart relatedSubPart
 
 	attachments subParts
 }
@@ -30,7 +30,7 @@ func NewEmptyEmail() Email {
 		cc:   newAddresses(),
 		bcc:  newAddresses(),
 
-		mainPart: newMainSubPart(),
+		mainPart: newRelatedSubPart(),
 
 		attachments: newSubParts(),
 	}
@@ -57,11 +57,11 @@ func (e Email) GetSubject() string {
 }
 
 func (e Email) GetText() string {
-	return e.mainPart.textSubPart.textPart.body
+	return e.mainPart.alternativeSubPart.textPart.body
 }
 
 func (e Email) GetHtml() string {
-	return e.mainPart.textSubPart.htmlPart.body
+	return e.mainPart.alternativeSubPart.htmlPart.body
 }
 
 func (e Email) WithFrom(from []mail.Address) Email {
@@ -96,18 +96,18 @@ func (e Email) WithSubject(subject string) Email {
 
 func (e Email) WithText(text string) Email {
 	newEmail := e.clone()
-	newEmail.mainPart.textSubPart = newEmail.mainPart.textSubPart.withText(text)
+	newEmail.mainPart.alternativeSubPart = newEmail.mainPart.alternativeSubPart.withText(text)
 	return newEmail
 }
 
 func (e Email) WithHtml(html string) Email {
 	newEmail := e.clone()
-	newEmail.mainPart.textSubPart = newEmail.mainPart.textSubPart.withHtml(html)
+	newEmail.mainPart.alternativeSubPart = newEmail.mainPart.alternativeSubPart.withHtml(html)
 	return newEmail
 }
 
 func (e Email) WithEmbeddedFile(cid string, filename string) (Email, error) {
-	embedded, err := newEmbeddedPart(cid, filename)
+	embedded, err := newEmbeddedPartFromFile(cid, filename)
 	if err != nil {
 		return e, err
 	}
@@ -123,7 +123,7 @@ func (e Email) WithoutEmbeddedFiles() Email {
 }
 
 func (e Email) WithAttachedFile(filename string) (Email, error) {
-	attachment, err := newAttachedPart(filename)
+	attachment, err := newAttachedPartFromFile(filename)
 	if err != nil {
 		return e, err
 	}

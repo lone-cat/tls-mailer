@@ -22,6 +22,8 @@ const (
 )
 
 const (
+	ContentDispositionHeader      = `Content-Disposition`
+	ContentIdHeader               = `Content-Id`
 	ContentTransferEncodingHeader = `Content-Transfer-Encoding`
 	ContentTypeHeader             = `Content-Type`
 	FromHeader                    = `from`

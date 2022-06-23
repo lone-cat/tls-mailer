@@ -49,9 +49,9 @@ func TestRoundTrip(t *testing.T) {
 	addr6 := mail.Address{Name: `Петров Иван`, Address: `sixth@email.addr`}
 	addr7 := mail.Address{Name: `Петров Сидор`, Address: `seventh@email.addr`}
 	addr8 := mail.Address{Name: `Сидоров Иван`, Address: `eighth@email.addr`}
-	addr9 := mail.Address{Name: `Сидоров Петр`, Address: `nninth@email.addr`}
+	addr9 := mail.Address{Name: `Сидоров Петр`, Address: `ninth@email.addr`}
 
-	from := []mail.Address{addr1}
+	from := []mail.Address{addr1, addr2}
 	to := []mail.Address{addr2, addr3, addr4, addr5}
 	cc := []mail.Address{addr6, addr7, addr8}
 	bcc := []mail.Address{addr9, addr1}
@@ -156,12 +156,12 @@ func TestRoundTrip(t *testing.T) {
 
 	importedEmailString := importedEmail.String()
 	if emailString != importedEmailString {
-		fmt.Printf("twice converted email does not match:")
-		fmt.Println(`---`)
+		fmt.Println(`twice converted email does not match:`)
+		fmt.Println(`--- original ---`)
 		fmt.Println(emailString)
-		fmt.Println(`---`)
+		fmt.Println(`--- reconstructed ---`)
 		fmt.Println(importedEmailString)
-		fmt.Println(`---`)
+		fmt.Println(`--- end ---`)
 		t.Fail()
 	}
 	//email.GetSubject()

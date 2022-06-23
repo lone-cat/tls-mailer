@@ -1,17 +1,11 @@
 package simpleemail
 
 import (
-	"errors"
 	"fmt"
 	"io"
-	"mime"
-	"mime/multipart"
 	"net/http"
-	"net/mail"
-	"net/textproto"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 const (
@@ -38,37 +32,49 @@ func newPart() part {
 	}
 }
 
-func newEmbeddedPart(cid, filename string) (embedded part, err error) {
-	data, err := os.ReadFile(filename)
-	if err != nil {
-		return
-	}
-	headers := newHeaders()
-	headers = headers.withHeader(`content-disposition`, fmt.Sprintf(`inline; filename="%s"`, filepath.Base(filename)))
-	if cid != `` {
-		headers = headers.withHeader(`content-id`, fmt.Sprintf(`<%s>`, cid))
-	}
+func newPartFromString(data string) (createdPart part) {
+	createdPart = newPart()
+	createdPart = createdPart.withBody(data)
+	return
+}
 
-	embedded = part{
-		headers: headers,
-		body:    string(data),
+func newEmbeddedPartFromString(cid, data string) (embeddedPart part) {
+	embeddedPart = newPartFromString(data)
+	embeddedPart.headers = embeddedPart.headers.withHeader(ContentDispositionHeader, `inline`)
+	if cid != `` {
+		embeddedPart.headers = embeddedPart.headers.withHeader(ContentIdHeader, fmt.Sprintf(`<%s>`, cid))
 	}
 
 	return
 }
 
-func newAttachedPart(filename string) (embedded part, err error) {
+func newEmbeddedPartFromFile(cid, filename string) (embedded part, err error) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		return
 	}
-	headers := newHeaders()
-	headers = headers.withHeader(`content-disposition`, fmt.Sprintf(`attachment; filename="%s"`, filepath.Base(filename)))
 
-	embedded = part{
-		headers: headers,
-		body:    string(data),
+	embedded = newEmbeddedPartFromString(cid, string(data))
+	embedded.headers = embedded.headers.withHeader(ContentDispositionHeader, fmt.Sprintf(`inline; filename="%s"`, filepath.Base(filename)))
+
+	return
+}
+
+func newAttachedPartFromString(data string) (attachment part) {
+	attachment = newPartFromString(data)
+	attachment.headers = attachment.headers.withHeader(ContentDispositionHeader, `attachment`)
+
+	return
+}
+
+func newAttachedPartFromFile(filename string) (attachment part, err error) {
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		return
 	}
+
+	attachment = newAttachedPartFromString(string(data))
+	attachment.headers = attachment.headers.withHeader(ContentDispositionHeader, fmt.Sprintf(`attachment; filename="%s"`, filepath.Base(filename)))
 
 	return
 }
@@ -104,6 +110,7 @@ func (p part) GetBody() string {
 func (p part) withBody(body string) part {
 	clonedPart := p.clone()
 	clonedPart.body = body
+	clonedPart.headers = clonedPart.headers.withHeader(ContentTypeHeader, http.DetectContentType([]byte(body)))
 	return clonedPart
 }
 
@@ -115,110 +122,6 @@ func (p part) withSubParts(subPartsList subParts) part {
 	clonedPart := p.clone()
 	clonedPart.subParts = subPartsList.clone()
 	return clonedPart
-}
-
-func (p part) toPlainMessage() (msg *mail.Message, err error) {
-	clonedHeaders := p.getHeaders()
-	if len(p.subParts) < 1 {
-
-		var encodedBody string
-
-		if p.GetBody() != `` {
-			clonedHeaders = clonedHeaders.withHeader(ContentTypeHeader, http.DetectContentType([]byte(p.GetBody())))
-
-			var contentType string
-			contentType, err = clonedHeaders.getContentType()
-			if err != nil {
-				return
-			}
-			if strings.HasPrefix(contentType, `text/`) {
-				//encodedBody = mime.QEncoding.Encode(`utf-8`, p.GetBody())
-				encodedBody, err = toQuotedPrintable(p.GetBody())
-				if err != nil {
-					return
-				}
-				clonedHeaders = clonedHeaders.withHeader(ContentTransferEncodingHeader, EncodingQuotedPrintable.String())
-			} else {
-				//encodedBody = mime.BEncoding.Encode(`utf-8`, p.GetBody())
-				encodedBody, err = toBase64(p.GetBody())
-				if err != nil {
-					return nil, err
-				}
-				clonedHeaders = clonedHeaders.withHeader(ContentTransferEncodingHeader, EncodingBase64.String())
-			}
-		}
-
-		return &mail.Message{
-			Header: clonedHeaders.extractHeadersMap(),
-			Body:   strings.NewReader(encodedBody),
-		}, nil
-	}
-
-	if len(p.subParts) == 1 {
-		return p.subParts[0].toPlainMessage()
-	}
-
-	contentType, params, _ := mime.ParseMediaType(clonedHeaders.getFirstHeaderValue(ContentTypeHeader))
-	needRegenerateHeader := false
-	if !strings.HasPrefix(contentType, MultipartPrefix) {
-		contentType = MultipartMixed
-		needRegenerateHeader = true
-	}
-	boundary, exists := params[`boundary`]
-	if !exists || boundary == `` {
-		boundary = generateBoundary()
-		needRegenerateHeader = true
-	}
-	if needRegenerateHeader {
-		clonedHeaders = clonedHeaders.withHeader(ContentTypeHeader, fmt.Sprintf(`%s; boundary="%s"`, contentType, boundary))
-		contentType, params, err = mime.ParseMediaType(clonedHeaders.getFirstHeaderValue(ContentTypeHeader))
-		if err != nil {
-			return
-		}
-		boundary, exists = params[`boundary`]
-		if !exists || boundary == `` {
-			return nil, errors.New(`boundary not set`)
-		}
-	}
-
-	bodyWriter := &strings.Builder{}
-	multipartWriter := multipart.NewWriter(bodyWriter)
-	err = multipartWriter.SetBoundary(boundary)
-	if err != nil {
-		return
-	}
-
-	var subMsg *mail.Message
-	var partWriter io.Writer
-	var subMsgBodyBytes []byte
-
-	for _, subPart := range p.subParts {
-		subMsg, err = subPart.toPlainMessage()
-		if err != nil {
-			return
-		}
-		partWriter, err = multipartWriter.CreatePart(textproto.MIMEHeader(subMsg.Header))
-		if err != nil {
-			return
-		}
-		subMsgBodyBytes, err = io.ReadAll(subMsg.Body)
-		if err != nil {
-			return
-		}
-		_, err = partWriter.Write(subMsgBodyBytes)
-		if err != nil {
-			return
-		}
-	}
-	err = multipartWriter.Close()
-	if err != nil {
-		return
-	}
-
-	return &mail.Message{
-		Header: clonedHeaders.extractHeadersMap(),
-		Body:   strings.NewReader(bodyWriter.String()),
-	}, nil
 }
 
 func (p part) compile() ([]byte, error) {
