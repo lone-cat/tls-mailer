@@ -8,9 +8,10 @@ import (
 	"mime"
 	"mime/quotedprintable"
 	"strings"
+	"unicode/utf8"
 )
 
-const base64LineLength = 76
+const mimeLineLength = 76
 
 var base64LineSeparator = []byte("\r\n")
 
@@ -18,7 +19,7 @@ var decoder = &mime.WordDecoder{}
 
 func toBase64(val string) (result string, err error) {
 	builder := &strings.Builder{}
-	lineSplitter := NewSplitter(builder, base64LineSeparator, base64LineLength)
+	lineSplitter := NewSplitter(builder, base64LineSeparator, mimeLineLength)
 	encoder := base64.NewEncoder(base64.StdEncoding, lineSplitter)
 
 	valBytes := []byte(val)
@@ -57,7 +58,6 @@ func toQuotedPrintable(s string) (string, error) {
 	if err != nil {
 		return ``, err
 	}
-	//res := strings.ReplaceAll(ac.String(), ` `, `_`)
 	return ac.String(), nil
 }
 
@@ -75,6 +75,26 @@ func encodeHeader(headerValue string) string {
 	return mime.QEncoding.Encode("utf-8", headerValue)
 }
 
-func encodedHeaderToMultiline(encodedHeader string) string {
+func encodedHeaderToMultiline1(encodedHeader string) string {
 	return strings.ReplaceAll(encodedHeader, `?= =?`, "?=\r\n =?")
+}
+
+func encodedHeaderToMultiline(encodedHeader string) string {
+	sourceParts := strings.Split(encodedHeader, ` `)
+	resultLines := make([]string, 0)
+	line := []string{sourceParts[0]}
+	for _, subStr := range sourceParts[1:] {
+		if utf8.RuneCountInString(strings.Join(line, ` `))+utf8.RuneCountInString(subStr) <= mimeLineLength {
+			line = append(line, subStr)
+		} else {
+			resultLines = append(resultLines, strings.Join(line, ` `))
+			line = []string{subStr}
+		}
+	}
+
+	if len(line) > 0 {
+		resultLines = append(resultLines, strings.Join(line, ` `))
+	}
+
+	return strings.Join(resultLines, "\r\n ")
 }
