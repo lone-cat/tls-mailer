@@ -4,6 +4,7 @@ import (
 	"github.com/lone-cat/stackerrors"
 	"github.com/lone-cat/tls-mailer/simpleemail"
 	"net/mail"
+	"os"
 )
 
 var (
@@ -39,6 +40,20 @@ var emailsForTest = make([]simpleemail.Email, 0)
 
 func init() {
 	stackerrors.SetDebugMode(true)
+
+	dataBytes, err := os.ReadFile(`../test_attachments/image1.jpg`)
+	if err != nil {
+		panic(err)
+	}
+
+	embedded = string(dataBytes)
+
+	dataBytes, err = os.ReadFile(`../test_attachments/image2.jpg`)
+	if err != nil {
+		panic(err)
+	}
+
+	attached = string(dataBytes)
 
 	email := simpleemail.NewEmptyEmail()
 

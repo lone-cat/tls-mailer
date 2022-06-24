@@ -32,7 +32,8 @@ func TestMainFunc(t *testing.T) {
 	fmt.Println(email)
 	fmt.Println(err)
 	*/
-	email := simpleemail.NewEmptyEmail().WithAttachedString(`wtf`).WithTo(to)
+	email, _ := simpleemail.NewEmptyEmail().WithTo(to).WithAttachedFile(`../test_attachments/image1.jpg`)
+	email, _ = email.WithEmbeddedFile(`some cid`, `../test_attachments/image2.jpg`)
 	fmt.Println(email.String())
 	return
 	email, err := simpleemail.Import(exampleTextAndHtml)
