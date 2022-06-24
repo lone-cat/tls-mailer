@@ -3,6 +3,7 @@ package simpleemail_test
 import (
 	"fmt"
 	"github.com/lone-cat/tls-mailer/simpleemail"
+	"os"
 	"testing"
 )
 
@@ -54,9 +55,20 @@ func TestFill(t *testing.T) {
 		WithFrom(from).
 		WithTo(to).
 		WithCc(cc).
-		WithBcc(bcc).
-		WithEmbeddedString(embedded).
-		WithAttachedString(attached)
+		WithBcc(bcc)
+	email, err := email.
+		WithEmbeddedFile(`cid`, embedded)
+	if err != nil {
+		fmt.Println(err)
+		t.FailNow()
+	}
+
+	email, err = email.
+		WithAttachedFile(attached)
+	if err != nil {
+		fmt.Println(err)
+		t.FailNow()
+	}
 
 	if email.GetText() != text {
 		fmt.Printf("`Text` filled incorrectly. expected %#v, got %#v\r\n", text, email.GetText())
@@ -86,12 +98,22 @@ func TestFill(t *testing.T) {
 		fmt.Printf("`Bcc` filled incorrectly. expected %#v, got %#v\r\n", bcc, email.GetBcc())
 		t.Fail()
 	}
-	if email.GetEmbedded()[0].GetBody() != embedded {
-		fmt.Printf("`Embedded body` filled incorrectly. expected %#v, got %#v\r\n", embedded, email.GetEmbedded()[0].GetBody())
+	dataBytes, err := os.ReadFile(embedded)
+	if err != nil {
+		fmt.Println(err)
+		t.FailNow()
+	}
+	if email.GetEmbedded()[0].GetBody() != string(dataBytes) {
+		fmt.Printf("`Embedded body` filled incorrectly. expected %#v, got %#v\r\n", string(dataBytes), email.GetEmbedded()[0].GetBody())
 		t.Fail()
 	}
-	if email.GetAttachments()[0].GetBody() != attached {
-		fmt.Printf("`Attached body` filled incorrectly. expected %#v, got %#v\r\n", attached, email.GetAttachments()[0].GetBody())
+	dataBytes, err = os.ReadFile(attached)
+	if err != nil {
+		fmt.Println(err)
+		t.FailNow()
+	}
+	if email.GetAttachments()[0].GetBody() != string(dataBytes) {
+		fmt.Printf("`Attached body` filled incorrectly. expected %#v, got %#v\r\n", string(dataBytes), email.GetAttachments()[0].GetBody())
 		t.Fail()
 	}
 }

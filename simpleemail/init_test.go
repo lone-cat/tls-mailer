@@ -4,8 +4,9 @@ import (
 	"github.com/lone-cat/stackerrors"
 	"github.com/lone-cat/tls-mailer/simpleemail"
 	"net/mail"
-	"os"
 )
+
+var cid = `cid`
 
 var (
 	addr1 = mail.Address{Name: `Иванов Иван`, Address: `first@email.addr`}
@@ -31,9 +32,9 @@ var (
 		`Кстати, этот текст еще и будет иметь перевод строки. Tak zhe on soderzhit английские буквы )`
 	html = `<h1>Здесь длина текста уже не будет иметь значения</h1>`
 
-	embedded = `aaa`
+	embedded = `../test_attachments/image1.jpg`
 
-	attached = `bbb`
+	attached = `../test_attachments/image2.jpg`
 )
 
 var emailsForTest = make([]simpleemail.Email, 0)
@@ -41,78 +42,112 @@ var emailsForTest = make([]simpleemail.Email, 0)
 func init() {
 	stackerrors.SetDebugMode(true)
 
-	dataBytes, err := os.ReadFile(`../test_attachments/image1.jpg`)
-	if err != nil {
-		panic(err)
-	}
-
-	embedded = string(dataBytes)
-
-	dataBytes, err = os.ReadFile(`../test_attachments/image2.jpg`)
-	if err != nil {
-		panic(err)
-	}
-
-	attached = string(dataBytes)
-
 	email := simpleemail.NewEmptyEmail()
-
 	emailsForTest = append(emailsForTest, email)
+
 	email = email.
 		WithFrom(from)
 	emailsForTest = append(emailsForTest, email)
+
 	email = email.
 		WithTo(to)
 	emailsForTest = append(emailsForTest, email)
+
 	email = email.
 		WithCc(cc)
 	emailsForTest = append(emailsForTest, email)
+
 	email = email.
 		WithBcc(bcc)
 	emailsForTest = append(emailsForTest, email)
+
 	email = email.
 		WithSubject(subject)
 	emailsForTest = append(emailsForTest, email)
+
 	email2 := email.
 		WithText(text)
 	emailsForTest = append(emailsForTest, email2)
+
 	email2 = email.
 		WithHtml(html)
 	emailsForTest = append(emailsForTest, email2)
-	email2 = email.
-		WithEmbeddedString(embedded)
+
+	email2, err := email.
+		WithEmbeddedFile(cid, embedded)
+	if err != nil {
+		panic(err)
+	}
 	emailsForTest = append(emailsForTest, email2)
-	email2 = email.
-		WithAttachedString(attached)
+
+	email2, err = email.
+		WithAttachedFile(attached)
+	if err != nil {
+		panic(err)
+	}
 	emailsForTest = append(emailsForTest, email2)
+
 	email2 = email.
 		WithText(text)
 	email3 := email2.
 		WithHtml(html)
 	emailsForTest = append(emailsForTest, email3)
-	email3 = email2.
-		WithEmbeddedString(embedded)
+
+	email3, err = email2.
+		WithEmbeddedFile(cid, embedded)
+	if err != nil {
+		panic(err)
+	}
 	emailsForTest = append(emailsForTest, email3)
-	email3 = email2.
-		WithAttachedString(attached)
+
+	email3, err = email2.
+		WithAttachedFile(attached)
+	if err != nil {
+		panic(err)
+	}
 	emailsForTest = append(emailsForTest, email3)
+
 	email2 = email.
 		WithHtml(html)
-	email3 = email2.
-		WithEmbeddedString(embedded)
+	email3, err = email2.
+		WithEmbeddedFile(cid, embedded)
+	if err != nil {
+		panic(err)
+	}
 	emailsForTest = append(emailsForTest, email3)
-	email3 = email2.
-		WithAttachedString(attached)
+
+	email3, err = email2.
+		WithAttachedFile(attached)
+	if err != nil {
+		panic(err)
+	}
 	emailsForTest = append(emailsForTest, email3)
-	email2 = email.
-		WithEmbeddedString(embedded)
-	email3 = email2.
-		WithAttachedString(attached)
+
+	email2, err = email.
+		WithEmbeddedFile(cid, embedded)
+	if err != nil {
+		panic(err)
+	}
+	email3, err = email2.
+		WithAttachedFile(attached)
+	if err != nil {
+		panic(err)
+	}
 	emailsForTest = append(emailsForTest, email3)
+
 	email3 = email.
 		WithText(text).
-		WithHtml(html).
-		WithEmbeddedString(embedded).
-		WithAttachedString(attached)
+		WithHtml(html)
+	email3, err = email3.
+		WithEmbeddedFile(cid, embedded)
+	if err != nil {
+		panic(err)
+	}
+	email3, err = email3.
+		WithAttachedFile(attached)
+	if err != nil {
+		panic(err)
+	}
 	emailsForTest = append(emailsForTest, email3)
+
 }
