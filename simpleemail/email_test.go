@@ -2,9 +2,18 @@ package simpleemail_test
 
 import (
 	"fmt"
-	"github.com/lone-cat/tls-mailer/simpleemail"
 	"testing"
 )
+
+type testStruct struct {
+	a string
+	b []int
+}
+
+func (t testStruct) WithA(a string) testStruct {
+	t.a = a
+	return t
+}
 
 func TestMainFunc(t *testing.T) {
 	/*email := simpleemail.NewEmptyEmail()
@@ -32,7 +41,18 @@ func TestMainFunc(t *testing.T) {
 	fmt.Println(email)
 	fmt.Println(err)
 	*/
-	email := simpleemail.NewEmptyEmail().WithTo(to) //.WithAttachedFile(`../test_attachments/image1.jpg`)
+	a := testStruct{
+		a: `wtf`,
+		b: []int{1},
+	}
+
+	b := a.WithA(`wtf2`)
+	b.b = append(b.b, 2)
+
+	fmt.Printf("%#v\r\n", a)
+	fmt.Printf("%#v\r\n", b)
+	return
+	/*email := simpleemail.NewEmptyEmail().WithTo(to) //.WithAttachedFile(`../test_attachments/image1.jpg`)
 	//email, _ = email.WithEmbeddedFile(`some cid`, `../test_attachments/image2.jpg`)
 	email, err := simpleemail.Import(email.String())
 	fmt.Printf("%#v\r\n", email)
@@ -46,5 +66,5 @@ func TestMainFunc(t *testing.T) {
 	return
 
 	fmt.Println(exampleTextAndHtml)
-	fmt.Println(email.String() == exampleTextAndHtml)
+	fmt.Println(email.String() == exampleTextAndHtml)*/
 }

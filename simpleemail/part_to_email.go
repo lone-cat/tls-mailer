@@ -164,7 +164,7 @@ func extractOnePartByContentType(contentType string, prts ...part) (textPart par
 	return
 }
 
-func proccessHeadersAndExtractPrimaryHeaders(oldHeaders Headers) (headers Headers, from []mail.Address, to []mail.Address, cc []mail.Address, bcc []mail.Address, subject string, err error) {
+func proccessHeadersAndExtractPrimaryHeaders(oldHeaders headers) (headers headers, from []mail.Address, to []mail.Address, cc []mail.Address, bcc []mail.Address, subject string, err error) {
 	defer func() {
 		err = stackerrors.WrapInDefer(err)
 	}()

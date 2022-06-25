@@ -7,7 +7,7 @@ import (
 )
 
 type Email struct {
-	headers Headers
+	headers headers
 
 	from addresses
 	to   addresses

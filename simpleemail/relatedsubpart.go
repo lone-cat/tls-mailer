@@ -1,7 +1,7 @@
 package simpleemail
 
 type relatedSubPart struct {
-	headers            Headers
+	headers            headers
 	alternativeSubPart alternativeSubPart
 	embeddedSubParts   subParts
 }

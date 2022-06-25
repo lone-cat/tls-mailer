@@ -20,7 +20,7 @@ const (
 )
 
 type part struct {
-	headers  Headers
+	headers  headers
 	body     string
 	subParts subParts
 }
@@ -87,11 +87,11 @@ func (p part) clone() part {
 	return clonedPart
 }
 
-func (p part) getHeaders() Headers {
+func (p part) getHeaders() headers {
 	return p.headers.clone()
 }
 
-func (p part) withHeaders(headers Headers) part {
+func (p part) withHeaders(headers headers) part {
 	clonedPart := p.clone()
 	clonedPart.headers = headers.clone()
 	return clonedPart

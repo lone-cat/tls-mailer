@@ -1,7 +1,7 @@
 package simpleemail
 
 type alternativeSubPart struct {
-	headers  Headers
+	headers  headers
 	textPart part
 	htmlPart part
 }
