@@ -1,20 +1,20 @@
 package simpleemail
 
 type relatedSubPart struct {
-	headers            headers
-	alternativeSubPart alternativeSubPart
+	headers            *headers
+	alternativeSubPart *alternativeSubPart
 	embeddedSubParts   subParts
 }
 
-func newRelatedSubPart() relatedSubPart {
-	return relatedSubPart{
+func newRelatedSubPart() *relatedSubPart {
+	return &relatedSubPart{
 		headers:            newHeaders(),
 		alternativeSubPart: newAlternativeSubPart(),
 		embeddedSubParts:   newSubParts(),
 	}
 }
 
-func (p relatedSubPart) clone() relatedSubPart {
+func (p *relatedSubPart) clone() *relatedSubPart {
 	newMainPart := newRelatedSubPart()
 	newMainPart.headers = p.headers.clone()
 	newMainPart.alternativeSubPart = p.alternativeSubPart.clone()
@@ -22,11 +22,11 @@ func (p relatedSubPart) clone() relatedSubPart {
 	return newMainPart
 }
 
-func (p relatedSubPart) isEmpty() bool {
+func (p *relatedSubPart) isEmpty() bool {
 	return p.alternativeSubPart.isEmpty() && len(p.embeddedSubParts) < 1
 }
 
-func (p relatedSubPart) toPart() part {
+func (p *relatedSubPart) toPart() *part {
 	alternativePart := p.alternativeSubPart.toPart()
 	if len(p.embeddedSubParts) < 1 {
 		return alternativePart
@@ -34,7 +34,7 @@ func (p relatedSubPart) toPart() part {
 
 	exportedPart := newPart()
 	exportedPart.headers = p.headers.clone()
-	exportedPart.subParts = append([]part{alternativePart}, p.embeddedSubParts...)
+	exportedPart.subParts = append([]*part{alternativePart}, p.embeddedSubParts...)
 	if !exportedPart.headers.isMultipart() {
 		exportedPart.headers = exportedPart.headers.withHeader(`Content-Type`, MultipartRelated)
 	}

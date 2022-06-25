@@ -20,25 +20,25 @@ const (
 )
 
 type part struct {
-	headers  headers
+	headers  *headers
 	body     string
 	subParts subParts
 }
 
-func newPart() part {
-	return part{
+func newPart() *part {
+	return &part{
 		headers:  newHeaders(),
 		subParts: newSubParts(),
 	}
 }
 
-func newPartFromString(data string) (createdPart part) {
+func newPartFromString(data string) (createdPart *part) {
 	createdPart = newPart()
 	createdPart = createdPart.withBody(data)
 	return
 }
 
-func newEmbeddedPartFromString(cid, data string) (embeddedPart part) {
+func newEmbeddedPartFromString(cid, data string) (embeddedPart *part) {
 	embeddedPart = newPartFromString(data)
 	embeddedPart.headers = embeddedPart.headers.withHeader(ContentDispositionHeader, `inline`)
 	if cid != `` {
@@ -48,7 +48,7 @@ func newEmbeddedPartFromString(cid, data string) (embeddedPart part) {
 	return
 }
 
-func newEmbeddedPartFromFile(cid, filename string) (embedded part, err error) {
+func newEmbeddedPartFromFile(cid, filename string) (embedded *part, err error) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		return
@@ -60,14 +60,14 @@ func newEmbeddedPartFromFile(cid, filename string) (embedded part, err error) {
 	return
 }
 
-func newAttachedPartFromString(data string) (attachment part) {
+func newAttachedPartFromString(data string) (attachment *part) {
 	attachment = newPartFromString(data)
 	attachment.headers = attachment.headers.withHeader(ContentDispositionHeader, `attachment`)
 
 	return
 }
 
-func newAttachedPartFromFile(filename string) (attachment part, err error) {
+func newAttachedPartFromFile(filename string) (attachment *part, err error) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		return
@@ -79,7 +79,7 @@ func newAttachedPartFromFile(filename string) (attachment part, err error) {
 	return
 }
 
-func (p part) clone() part {
+func (p *part) clone() *part {
 	clonedPart := newPart()
 	clonedPart.headers = p.headers.clone()
 	clonedPart.body = p.body
@@ -87,44 +87,44 @@ func (p part) clone() part {
 	return clonedPart
 }
 
-func (p part) getHeaders() headers {
+func (p *part) getHeaders() *headers {
 	return p.headers.clone()
 }
 
-func (p part) withHeaders(headers headers) part {
+func (p part) withHeaders(headers *headers) *part {
 	clonedPart := p.clone()
 	clonedPart.headers = headers.clone()
 	return clonedPart
 }
 
-func (p part) withHeadersFromMap(headers map[string][]string) part {
+func (p *part) withHeadersFromMap(headers map[string][]string) *part {
 	clonedPart := p.clone()
 	clonedPart.headers = newHeadersFromMap(headers)
 	return clonedPart
 }
 
-func (p part) GetBody() string {
+func (p *part) GetBody() string {
 	return p.body
 }
 
-func (p part) withBody(body string) part {
+func (p *part) withBody(body string) *part {
 	clonedPart := p.clone()
 	clonedPart.body = body
 	clonedPart.headers = clonedPart.headers.withHeader(ContentTypeHeader, http.DetectContentType([]byte(body)))
 	return clonedPart
 }
 
-func (p part) getSubParts() subParts {
+func (p *part) getSubParts() subParts {
 	return p.subParts.clone()
 }
 
-func (p part) withSubParts(subPartsList subParts) part {
+func (p *part) withSubParts(subPartsList subParts) *part {
 	clonedPart := p.clone()
 	clonedPart.subParts = subPartsList.clone()
 	return clonedPart
 }
 
-func (p part) compile() ([]byte, error) {
+func (p *part) compile() ([]byte, error) {
 	msg, err := p.toPlainMessage()
 	if err != nil {
 		return nil, err

@@ -7,7 +7,7 @@ import (
 	"net/mail"
 )
 
-func convertPartToEmail(sourcePart part) (email Email, err error) {
+func convertPartToEmail(sourcePart *part) (email *Email, err error) {
 	defer func() {
 		err = stackerrors.WrapInDefer(err)
 	}()
@@ -27,7 +27,7 @@ func convertPartToEmail(sourcePart part) (email Email, err error) {
 	return
 }
 
-func splitEmailPart(prt part) (relatedPart relatedSubPart, attachments subParts, err error) {
+func splitEmailPart(prt *part) (relatedPart *relatedSubPart, attachments subParts, err error) {
 	defer func() {
 		err = stackerrors.WrapInDefer(err)
 	}()
@@ -58,7 +58,7 @@ func splitEmailPart(prt part) (relatedPart relatedSubPart, attachments subParts,
 	return
 }
 
-func convertToRelatedPart(prt part) (relatedPart relatedSubPart, err error) {
+func convertToRelatedPart(prt *part) (relatedPart *relatedSubPart, err error) {
 	defer func() {
 		err = stackerrors.WrapInDefer(err)
 	}()
@@ -91,7 +91,7 @@ func convertToRelatedPart(prt part) (relatedPart relatedSubPart, err error) {
 	return
 }
 
-func convertToAlternativePart(prt part) (alternativePart alternativeSubPart, err error) {
+func convertToAlternativePart(prt *part) (alternativePart *alternativeSubPart, err error) {
 	defer func() {
 		err = stackerrors.WrapInDefer(err)
 	}()
@@ -108,7 +108,7 @@ func convertToAlternativePart(prt part) (alternativePart alternativeSubPart, err
 	}
 
 	alternativePart = newAlternativeSubPart()
-	dataParts := []part{prt}
+	dataParts := []*part{prt}
 	if contentType == MultipartAlternative {
 		if len(prt.subParts) < 1 {
 			return
@@ -121,7 +121,7 @@ func convertToAlternativePart(prt part) (alternativePart alternativeSubPart, err
 		dataParts = prt.subParts
 	}
 
-	var textPart, htmlPart part
+	var textPart, htmlPart *part
 	var found bool
 
 	textPart, found, err = extractOnePartByContentType(TextPlain, dataParts...)
@@ -143,7 +143,7 @@ func convertToAlternativePart(prt part) (alternativePart alternativeSubPart, err
 	return
 }
 
-func extractOnePartByContentType(contentType string, prts ...part) (textPart part, found bool, err error) {
+func extractOnePartByContentType(contentType string, prts ...*part) (textPart *part, found bool, err error) {
 	var subPartContentType string
 	for _, prt := range prts {
 		subPartContentType, err = prt.getHeaders().getContentType()
@@ -164,40 +164,40 @@ func extractOnePartByContentType(contentType string, prts ...part) (textPart par
 	return
 }
 
-func proccessHeadersAndExtractPrimaryHeaders(oldHeaders headers) (headers headers, from []mail.Address, to []mail.Address, cc []mail.Address, bcc []mail.Address, subject string, err error) {
+func proccessHeadersAndExtractPrimaryHeaders(oldHeaders *headers) (headers *headers, from []*mail.Address, to []*mail.Address, cc []*mail.Address, bcc []*mail.Address, subject string, err error) {
 	defer func() {
 		err = stackerrors.WrapInDefer(err)
 	}()
 	headers = oldHeaders.clone()
 
-	from = make([]mail.Address, 0)
-	to = make([]mail.Address, 0)
-	cc = make([]mail.Address, 0)
-	bcc = make([]mail.Address, 0)
+	from = make([]*mail.Address, 0)
+	to = make([]*mail.Address, 0)
+	cc = make([]*mail.Address, 0)
+	bcc = make([]*mail.Address, 0)
 
 	if headers.getFirstHeaderValue(FromHeader) != `` {
-		from, err = headers.getAddressList(FromHeader)
+		from, err = headers.headers.AddressList(FromHeader)
 		if err != nil {
 			return
 		}
 	}
 
 	if headers.getFirstHeaderValue(ToHeader) != `` {
-		to, err = headers.getAddressList(ToHeader)
+		to, err = headers.headers.AddressList(ToHeader)
 		if err != nil {
 			return
 		}
 	}
 
 	if headers.getFirstHeaderValue(CCHeader) != `` {
-		cc, err = headers.getAddressList(CCHeader)
+		cc, err = headers.headers.AddressList(CCHeader)
 		if err != nil {
 			return
 		}
 	}
 
 	if headers.getFirstHeaderValue(BCCHeader) != `` {
-		bcc, err = headers.getAddressList(BCCHeader)
+		bcc, err = headers.headers.AddressList(BCCHeader)
 		if err != nil {
 			return
 		}

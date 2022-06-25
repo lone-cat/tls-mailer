@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func Import(message string) (email Email, err error) {
+func Import(message string) (email *Email, err error) {
 	defer func() {
 		err = stackerrors.WrapInDefer(err)
 	}()
@@ -17,7 +17,7 @@ func Import(message string) (email Email, err error) {
 		return
 	}
 
-	var convertedPart part
+	var convertedPart *part
 	convertedPart, err = convertMessageToPartRecursive(msg)
 	if err != nil {
 		return

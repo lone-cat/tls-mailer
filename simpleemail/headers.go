@@ -21,33 +21,33 @@ const (
 	EncodingBase64          Encoding = `base64`
 )
 
+func (e Encoding) String() string {
+	return string(e)
+}
+
 const (
 	ContentDispositionHeader      = `Content-Disposition`
 	ContentIdHeader               = `Content-Id`
 	ContentTransferEncodingHeader = `Content-Transfer-Encoding`
 	ContentTypeHeader             = `Content-Type`
-	FromHeader                    = `from`
-	ToHeader                      = `to`
-	CCHeader                      = `cc`
-	BCCHeader                     = `bcc`
-	SubjectHeader                 = `subject`
+	FromHeader                    = `From`
+	ToHeader                      = `To`
+	CCHeader                      = `Cc`
+	BCCHeader                     = `Bcc`
+	SubjectHeader                 = `Subject`
 )
-
-func (e Encoding) String() string {
-	return string(e)
-}
 
 type headers struct {
 	headers mail.Header
 }
 
-func newHeaders() headers {
-	return headers{
+func newHeaders() *headers {
+	return &headers{
 		headers: make(map[string][]string),
 	}
 }
 
-func newHeadersFromMap(headers mail.Header) headers {
+func newHeadersFromMap(headers mail.Header) *headers {
 	h := newHeaders()
 	for headerName, headerValues := range headers {
 		h = h.withHeader(headerName, headerValues...)
@@ -55,16 +55,17 @@ func newHeadersFromMap(headers mail.Header) headers {
 	return h
 }
 
-func (h headers) extractHeadersMap() map[string][]string {
+func (h *headers) extractHeadersMap() map[string][]string {
 	return copyHeadersMap(h.headers)
 }
 
-func (h headers) clone() headers {
-	h.headers = copyHeadersMap(h.headers)
-	return h
+func (h *headers) clone() *headers {
+	return &headers{
+		headers: copyHeadersMap(h.headers),
+	}
 }
 
-func (h headers) withHeader(header string, values ...string) headers {
+func (h *headers) withHeader(header string, values ...string) *headers {
 	newHeaders := h.clone()
 	if len(values) < 1 {
 		return newHeaders
@@ -76,7 +77,7 @@ func (h headers) withHeader(header string, values ...string) headers {
 	return newHeaders
 }
 
-func (h headers) withAddedHeader(header string, values ...string) headers {
+func (h *headers) withAddedHeader(header string, values ...string) *headers {
 	newHeaders := h.clone()
 	if len(values) < 1 {
 		return newHeaders
@@ -87,22 +88,22 @@ func (h headers) withAddedHeader(header string, values ...string) headers {
 	return newHeaders
 }
 
-func (h headers) withoutHeader(header string) headers {
+func (h *headers) withoutHeader(header string) *headers {
 	newHeaders := h.clone()
 	textproto.MIMEHeader(newHeaders.headers).Del(header)
 	return newHeaders
 }
 
-func (h headers) getFirstHeaderValue(header string) string {
+func (h *headers) getFirstHeaderValue(header string) string {
 	return h.headers.Get(header)
 }
 
-func (h headers) getContentType() (contentType string, err error) {
+func (h *headers) getContentType() (contentType string, err error) {
 	contentType, _, err = mime.ParseMediaType(h.getFirstHeaderValue(ContentTypeHeader))
 	return
 }
 
-func (h headers) getBoundary() (boundary string, err error) {
+func (h *headers) getBoundary() (boundary string, err error) {
 	_, params, err := mime.ParseMediaType(h.getFirstHeaderValue(ContentTypeHeader))
 	if err != nil {
 		return ``, err
@@ -114,7 +115,7 @@ func (h headers) getBoundary() (boundary string, err error) {
 	return
 }
 
-func (h headers) isMultipartWithError() (bool, error) {
+func (h *headers) isMultipartWithError() (bool, error) {
 	contentType, err := h.getContentType()
 	if err != nil {
 		return false, err
@@ -123,28 +124,16 @@ func (h headers) isMultipartWithError() (bool, error) {
 	return strings.HasPrefix(contentType, MultipartPrefix), nil
 }
 
-func (h headers) isMultipart() bool {
+func (h *headers) isMultipart() bool {
 	multipart, _ := h.isMultipartWithError()
 	return multipart
 }
 
-func (h headers) getAddressList(header string) (addresses []mail.Address, err error) {
-	addresses = make([]mail.Address, 0)
-	ptrs, err := h.headers.AddressList(header)
-	if err != nil {
-		return
-	}
-	for _, addressPointer := range ptrs {
-		addresses = append(addresses, *addressPointer)
-	}
-	return
-}
-
-func (h headers) getContentTransferEncoding() Encoding {
+func (h *headers) getContentTransferEncoding() Encoding {
 	return Encoding(strings.ToLower(h.getFirstHeaderValue(ContentTransferEncodingHeader)))
 }
 
-func (h headers) compile() []byte {
+func (h *headers) compile() []byte {
 	headerNames := make([]string, 0)
 	for k := range h.headers {
 		headerNames = append(headerNames, k)

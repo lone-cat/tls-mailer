@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-func convertMessageToPartRecursive(msg *mail.Message) (exportedPart part, err error) {
+func convertMessageToPartRecursive(msg *mail.Message) (exportedPart *part, err error) {
 	defer func() {
 		err = stackerrors.WrapInDefer(err)
 	}()
@@ -31,7 +31,7 @@ func convertMessageToPartRecursive(msg *mail.Message) (exportedPart part, err er
 	return
 }
 
-func convertSimpleMsgToPart(msg *mail.Message) (exportedPart part, err error) {
+func convertSimpleMsgToPart(msg *mail.Message) (exportedPart *part, err error) {
 	defer func() {
 		err = stackerrors.WrapInDefer(err)
 	}()
@@ -51,7 +51,7 @@ func convertSimpleMsgToPart(msg *mail.Message) (exportedPart part, err error) {
 	return
 }
 
-func convertMultipartMsgToPart(msg *mail.Message, boundary string) (exportedPart part, err error) {
+func convertMultipartMsgToPart(msg *mail.Message, boundary string) (exportedPart *part, err error) {
 	defer func() {
 		err = stackerrors.WrapInDefer(err)
 	}()
@@ -76,7 +76,7 @@ func convertMultipartMsgToPart(msg *mail.Message, boundary string) (exportedPart
 			return
 		}
 		subMsg := &mail.Message{Header: mail.Header(p.Header), Body: p}
-		var subPart part
+		var subPart *part
 		subPart, err = convertMessageToPartRecursive(subMsg)
 		if err != nil {
 			return
@@ -89,7 +89,7 @@ func convertMultipartMsgToPart(msg *mail.Message, boundary string) (exportedPart
 	return
 }
 
-func unpackBody(part part) (unpacked part, err error) {
+func unpackBody(part *part) (unpacked *part, err error) {
 	defer func() {
 		err = stackerrors.WrapInDefer(err)
 	}()

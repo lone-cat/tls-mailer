@@ -7,7 +7,7 @@ import (
 )
 
 type Email struct {
-	headers headers
+	headers *headers
 
 	from addresses
 	to   addresses
@@ -16,13 +16,13 @@ type Email struct {
 
 	subject string
 
-	mainPart relatedSubPart
+	mainPart *relatedSubPart
 
 	attachments subParts
 }
 
-func NewEmptyEmail() Email {
-	return Email{
+func NewEmptyEmail() *Email {
+	return &Email{
 		headers: newHeaders(),
 
 		from: newAddresses(),
@@ -36,77 +36,77 @@ func NewEmptyEmail() Email {
 	}
 }
 
-func (e Email) GetFrom() []mail.Address {
+func (e *Email) GetFrom() []*mail.Address {
 	return e.from.clone()
 }
 
-func (e Email) GetTo() []mail.Address {
+func (e *Email) GetTo() []*mail.Address {
 	return e.to.clone()
 }
 
-func (e Email) GetCc() []mail.Address {
+func (e *Email) GetCc() []*mail.Address {
 	return e.cc.clone()
 }
 
-func (e Email) GetBcc() []mail.Address {
+func (e *Email) GetBcc() []*mail.Address {
 	return e.bcc.clone()
 }
 
-func (e Email) GetSubject() string {
+func (e *Email) GetSubject() string {
 	return e.subject
 }
 
-func (e Email) GetText() string {
+func (e *Email) GetText() string {
 	return e.mainPart.alternativeSubPart.textPart.body
 }
 
-func (e Email) GetHtml() string {
+func (e *Email) GetHtml() string {
 	return e.mainPart.alternativeSubPart.htmlPart.body
 }
 
-func (e Email) WithFrom(from []mail.Address) Email {
+func (e *Email) WithFrom(from []*mail.Address) *Email {
 	newEmail := e.clone()
 	newEmail.from = from
 	return newEmail
 }
 
-func (e Email) WithTo(to []mail.Address) Email {
+func (e *Email) WithTo(to []*mail.Address) *Email {
 	newEmail := e.clone()
 	newEmail.to = to
 	return newEmail
 }
 
-func (e Email) WithCc(cc []mail.Address) Email {
+func (e *Email) WithCc(cc []*mail.Address) *Email {
 	newEmail := e.clone()
 	newEmail.cc = cc
 	return newEmail
 }
 
-func (e Email) WithBcc(bcc []mail.Address) Email {
+func (e *Email) WithBcc(bcc []*mail.Address) *Email {
 	newEmail := e.clone()
 	newEmail.bcc = bcc
 	return newEmail
 }
 
-func (e Email) WithSubject(subject string) Email {
+func (e *Email) WithSubject(subject string) *Email {
 	newEmail := e.clone()
 	newEmail.subject = subject
 	return newEmail
 }
 
-func (e Email) WithText(text string) Email {
+func (e *Email) WithText(text string) *Email {
 	newEmail := e.clone()
 	newEmail.mainPart.alternativeSubPart = newEmail.mainPart.alternativeSubPart.withText(text)
 	return newEmail
 }
 
-func (e Email) WithHtml(html string) Email {
+func (e *Email) WithHtml(html string) *Email {
 	newEmail := e.clone()
 	newEmail.mainPart.alternativeSubPart = newEmail.mainPart.alternativeSubPart.withHtml(html)
 	return newEmail
 }
 
-func (e Email) WithEmbeddedFile(cid string, filename string) (Email, error) {
+func (e *Email) WithEmbeddedFile(cid string, filename string) (*Email, error) {
 	embedded, err := newEmbeddedPartFromFile(cid, filename)
 	if err != nil {
 		return e, err
@@ -116,13 +116,13 @@ func (e Email) WithEmbeddedFile(cid string, filename string) (Email, error) {
 	return newEmail, nil
 }
 
-func (e Email) WithoutEmbeddedFiles() Email {
+func (e *Email) WithoutEmbeddedFiles() *Email {
 	newEmail := e.clone()
 	newEmail.mainPart.embeddedSubParts = newSubParts()
 	return newEmail
 }
 
-func (e Email) WithAttachedFile(filename string) (Email, error) {
+func (e *Email) WithAttachedFile(filename string) (*Email, error) {
 	attachment, err := newAttachedPartFromFile(filename)
 	if err != nil {
 		return e, err
@@ -132,13 +132,13 @@ func (e Email) WithAttachedFile(filename string) (Email, error) {
 	return newEmail, nil
 }
 
-func (e Email) WithoutAttachedFiles() Email {
+func (e *Email) WithoutAttachedFiles() *Email {
 	newEmail := e.clone()
 	newEmail.attachments = newSubParts()
 	return newEmail
 }
 
-func (e Email) Compile() ([]byte, error) {
+func (e *Email) Compile() ([]byte, error) {
 	exportedPart := e.toPart()
 
 	if len(e.from) > 0 {
@@ -201,7 +201,7 @@ func (e Email) Compile() ([]byte, error) {
 	return exportedPart.compile()
 }
 
-func (e Email) String() string {
+func (e *Email) String() string {
 	compiled, err := e.Compile()
 	if err != nil {
 		return err.Error()
@@ -209,14 +209,14 @@ func (e Email) String() string {
 	return string(compiled)
 }
 
-func (e Email) GetSender() *mail.Address {
+func (e *Email) GetSender() *mail.Address {
 	if len(e.from) < 1 {
 		return nil
 	}
 	return &mail.Address{Name: e.from[0].Name, Address: e.from[0].Address}
 }
 
-func (e Email) GetRecipients() []*mail.Address {
+func (e *Email) GetRecipients() []*mail.Address {
 	recipients := make([]*mail.Address, len(e.to))
 	for ind, recipient := range e.to {
 		recipients[ind] = &mail.Address{Name: recipient.Name, Address: recipient.Address}
@@ -224,7 +224,7 @@ func (e Email) GetRecipients() []*mail.Address {
 	return recipients
 }
 
-func (e Email) clone() Email {
+func (e *Email) clone() *Email {
 
 	newEmail := NewEmptyEmail()
 
@@ -243,7 +243,7 @@ func (e Email) clone() Email {
 	return newEmail
 }
 
-func (e Email) toPart() part {
+func (e *Email) toPart() *part {
 	mainPart := e.mainPart.toPart()
 
 	if len(e.attachments) < 1 {
@@ -252,7 +252,7 @@ func (e Email) toPart() part {
 
 	exportedPart := newPart()
 	exportedPart.headers = e.headers.clone()
-	exportedPart.subParts = append([]part{mainPart}, e.attachments...)
+	exportedPart.subParts = append([]*part{mainPart}, e.attachments...)
 	if !exportedPart.headers.isMultipart() {
 		exportedPart.headers = exportedPart.headers.withHeader(`Content-Type`, MultipartMixed)
 	}

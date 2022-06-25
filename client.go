@@ -82,7 +82,7 @@ func (c *Client) GetType() string {
 
 func (c *Client) Email() simpleemail.Email {
 	newMail := simpleemail.NewEmptyEmail()
-	newMail = newMail.WithFrom([]mail.Address{*c.sender})
+	newMail = newMail.WithFrom([]*mail.Address{c.sender})
 	return newMail
 }
 
