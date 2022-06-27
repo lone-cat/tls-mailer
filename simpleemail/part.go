@@ -80,10 +80,11 @@ func newAttachedPartFromFile(filename string) (attachment *part, err error) {
 }
 
 func (p *part) clone() *part {
-	clonedPart := newPart()
-	clonedPart.headers = p.headers.clone()
-	clonedPart.body = p.body
-	clonedPart.subParts = p.subParts.clone()
+	clonedPart := &part{
+		headers:  p.headers,
+		body:     p.body,
+		subParts: p.subParts,
+	}
 	return clonedPart
 }
 
@@ -91,16 +92,20 @@ func (p *part) getHeaders() *headers {
 	return p.headers.clone()
 }
 
-func (p part) withHeaders(headers *headers) *part {
-	clonedPart := p.clone()
-	clonedPart.headers = headers.clone()
-	return clonedPart
+func (p *part) withHeaders(headers *headers) *part {
+	return &part{
+		headers:  headers.clone(),
+		body:     p.body,
+		subParts: p.subParts,
+	}
 }
 
 func (p *part) withHeadersFromMap(headers map[string][]string) *part {
-	clonedPart := p.clone()
-	clonedPart.headers = newHeadersFromMap(headers)
-	return clonedPart
+	return &part{
+		headers:  newHeadersFromMap(headers),
+		body:     p.body,
+		subParts: p.subParts,
+	}
 }
 
 func (p *part) GetBody() string {
@@ -108,10 +113,11 @@ func (p *part) GetBody() string {
 }
 
 func (p *part) withBody(body string) *part {
-	clonedPart := p.clone()
-	clonedPart.body = body
-	clonedPart.headers = clonedPart.headers.withHeader(ContentTypeHeader, http.DetectContentType([]byte(body)))
-	return clonedPart
+	return &part{
+		headers:  p.headers.withHeader(ContentTypeHeader, http.DetectContentType([]byte(body))),
+		body:     body,
+		subParts: p.subParts,
+	}
 }
 
 func (p *part) getSubParts() subParts {
@@ -119,9 +125,11 @@ func (p *part) getSubParts() subParts {
 }
 
 func (p *part) withSubParts(subPartsList subParts) *part {
-	clonedPart := p.clone()
-	clonedPart.subParts = subPartsList.clone()
-	return clonedPart
+	return &part{
+		headers:  p.headers,
+		body:     p.body,
+		subParts: subPartsList.clone(),
+	}
 }
 
 func (p *part) compile() ([]byte, error) {

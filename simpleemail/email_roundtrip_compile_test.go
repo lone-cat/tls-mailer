@@ -12,7 +12,7 @@ func TestRoundtripCompile(t *testing.T) {
 	}
 }
 
-func testComiledCompare(email simpleemail.Email, t *testing.T) {
+func testComiledCompare(email *simpleemail.Email, t *testing.T) {
 	emailString := email.String()
 
 	importedEmail, err := simpleemail.Import(emailString)

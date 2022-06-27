@@ -37,7 +37,7 @@ var (
 	attached = `../test_attachments/image2.jpg`
 )
 
-var emailsForTest = make([]simpleemail.Email, 0)
+var emailsForTest = make([]*simpleemail.Email, 0)
 
 func init() {
 	stackerrors.SetDebugMode(true)

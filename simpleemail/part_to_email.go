@@ -40,14 +40,16 @@ func splitEmailPart(prt *part) (relatedPart *relatedSubPart, attachments subPart
 
 	attachments = newSubParts()
 
-	partToConvert := prt.clone()
+	var partToConvert *part
 	if contentType == MultipartMixed {
 		if len(prt.subParts) < 1 {
 			relatedPart = newRelatedSubPart()
 			return
 		}
-		partToConvert = prt.subParts[0]
+		partToConvert = prt.subParts[0].clone()
 		attachments = prt.subParts[1:].clone()
+	} else {
+		partToConvert = prt.clone()
 	}
 
 	relatedPart, err = convertToRelatedPart(partToConvert)
@@ -71,14 +73,16 @@ func convertToRelatedPart(prt *part) (relatedPart *relatedSubPart, err error) {
 
 	relatedPart = newRelatedSubPart()
 
-	partToConvert := prt.clone()
+	var partToConvert *part
 	if contentType == MultipartRelated {
 		if len(prt.subParts) < 1 {
 			return
 		}
-		partToConvert = prt.subParts[0]
+		partToConvert = prt.subParts[0].clone()
 		relatedPart.embeddedSubParts = prt.subParts[1:].clone()
 		relatedPart.headers = prt.headers.clone()
+	} else {
+		partToConvert = prt.clone()
 	}
 
 	altPart, err := convertToAlternativePart(partToConvert)

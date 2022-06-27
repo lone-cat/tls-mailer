@@ -10,9 +10,12 @@ type testStruct struct {
 	b []int
 }
 
-func (t testStruct) WithA(a string) testStruct {
-	t.a = a
-	return t
+func (t *testStruct) WithA(a string) *testStruct {
+	newStruct := &testStruct{
+		a: a,
+		b: t.b,
+	}
+	return newStruct
 }
 
 func TestMainFunc(t *testing.T) {
@@ -41,7 +44,7 @@ func TestMainFunc(t *testing.T) {
 	fmt.Println(email)
 	fmt.Println(err)
 	*/
-	a := testStruct{
+	a := &testStruct{
 		a: `wtf`,
 		b: []int{1},
 	}

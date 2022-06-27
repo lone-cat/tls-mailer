@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-func (p part) toPlainMessage() (msg *mail.Message, err error) {
+func (p *part) toPlainMessage() (msg *mail.Message, err error) {
 	clonedHeaders := p.getHeaders()
 	if len(p.subParts) < 1 {
 

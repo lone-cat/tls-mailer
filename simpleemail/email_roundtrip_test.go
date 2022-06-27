@@ -46,7 +46,7 @@ func TestRoundTrip(t *testing.T) {
 	}
 }
 
-func testCompare(email simpleemail.Email, t *testing.T) {
+func testCompare(email *simpleemail.Email, t *testing.T) {
 	emailString := email.String()
 
 	importedEmail, err := simpleemail.Import(emailString)

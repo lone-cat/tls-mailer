@@ -47,12 +47,10 @@ func newHeaders() *headers {
 	}
 }
 
-func newHeadersFromMap(headers mail.Header) *headers {
-	h := newHeaders()
-	for headerName, headerValues := range headers {
-		h = h.withHeader(headerName, headerValues...)
+func newHeadersFromMap(mailHeader mail.Header) *headers {
+	return &headers{
+		headers: copyHeadersMap(mailHeader),
 	}
-	return h
 }
 
 func (h *headers) extractHeadersMap() map[string][]string {
