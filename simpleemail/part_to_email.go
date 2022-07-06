@@ -33,9 +33,11 @@ func splitEmailPart(prt *part) (relatedPart *relatedSubPart, attachments subPart
 	}()
 
 	var contentType string
-	contentType, err = prt.getHeaders().getContentType()
-	if err != nil {
-		return
+	if prt.headers.getFirstHeaderValue(ContentTypeHeader) != `` || prt.body != `` {
+		contentType, err = prt.headers.getContentType()
+		if err != nil {
+			return
+		}
 	}
 
 	attachments = newSubParts()
@@ -46,10 +48,10 @@ func splitEmailPart(prt *part) (relatedPart *relatedSubPart, attachments subPart
 			relatedPart = newRelatedSubPart()
 			return
 		}
-		partToConvert = prt.subParts[0].clone()
+		partToConvert = prt.subParts[0]
 		attachments = prt.subParts[1:].clone()
 	} else {
-		partToConvert = prt.clone()
+		partToConvert = prt
 	}
 
 	relatedPart, err = convertToRelatedPart(partToConvert)
@@ -66,9 +68,11 @@ func convertToRelatedPart(prt *part) (relatedPart *relatedSubPart, err error) {
 	}()
 
 	var contentType string
-	contentType, err = prt.getHeaders().getContentType()
-	if err != nil {
-		return
+	if prt.headers.getFirstHeaderValue(ContentTypeHeader) != `` || prt.body != `` {
+		contentType, err = prt.headers.getContentType()
+		if err != nil {
+			return
+		}
 	}
 
 	relatedPart = newRelatedSubPart()
@@ -78,11 +82,11 @@ func convertToRelatedPart(prt *part) (relatedPart *relatedSubPart, err error) {
 		if len(prt.subParts) < 1 {
 			return
 		}
-		partToConvert = prt.subParts[0].clone()
+		partToConvert = prt.subParts[0]
 		relatedPart.embeddedSubParts = prt.subParts[1:].clone()
-		relatedPart.headers = prt.headers.clone()
+		relatedPart.headers = prt.headers
 	} else {
-		partToConvert = prt.clone()
+		partToConvert = prt
 	}
 
 	altPart, err := convertToAlternativePart(partToConvert)
@@ -101,14 +105,15 @@ func convertToAlternativePart(prt *part) (alternativePart *alternativeSubPart, e
 	}()
 
 	var contentType string
-	contentType, err = prt.getHeaders().getContentType()
-	if err != nil {
-		return
-	}
-
-	if prt.headers.isMultipart() && contentType != MultipartAlternative {
-		err = errors.New(fmt.Sprintf(`unexpected multipart type "%s"`, contentType))
-		return
+	if prt.headers.getFirstHeaderValue(ContentTypeHeader) != `` || prt.body != `` {
+		contentType, err = prt.headers.getContentType()
+		if err != nil {
+			return
+		}
+		if prt.headers.isMultipart() && contentType != MultipartAlternative {
+			err = errors.New(fmt.Sprintf(`unexpected multipart type "%s"`, contentType))
+			return
+		}
 	}
 
 	alternativePart = newAlternativeSubPart()
@@ -121,7 +126,7 @@ func convertToAlternativePart(prt *part) (alternativePart *alternativeSubPart, e
 			err = errors.New(`alternative part contains more than two subparts`)
 			return
 		}
-		alternativePart.headers = prt.headers.clone()
+		alternativePart.headers = prt.headers
 		dataParts = prt.subParts
 	}
 
@@ -152,7 +157,8 @@ func extractOnePartByContentType(contentType string, prts ...*part) (textPart *p
 	for _, prt := range prts {
 		subPartContentType, err = prt.getHeaders().getContentType()
 		if err != nil {
-			return
+			err = nil
+			continue
 		}
 		if subPartContentType != contentType {
 			continue
@@ -172,42 +178,41 @@ func proccessHeadersAndExtractPrimaryHeaders(oldHeaders *headers) (headers *head
 	defer func() {
 		err = stackerrors.WrapInDefer(err)
 	}()
-	headers = oldHeaders.clone()
 
 	from = make([]*mail.Address, 0)
 	to = make([]*mail.Address, 0)
 	cc = make([]*mail.Address, 0)
 	bcc = make([]*mail.Address, 0)
 
-	if headers.getFirstHeaderValue(FromHeader) != `` {
-		from, err = headers.headers.AddressList(FromHeader)
+	if oldHeaders.getFirstHeaderValue(FromHeader) != `` {
+		from, err = oldHeaders.headers.AddressList(FromHeader)
 		if err != nil {
 			return
 		}
 	}
 
-	if headers.getFirstHeaderValue(ToHeader) != `` {
-		to, err = headers.headers.AddressList(ToHeader)
+	if oldHeaders.getFirstHeaderValue(ToHeader) != `` {
+		to, err = oldHeaders.headers.AddressList(ToHeader)
 		if err != nil {
 			return
 		}
 	}
 
-	if headers.getFirstHeaderValue(CCHeader) != `` {
-		cc, err = headers.headers.AddressList(CCHeader)
+	if oldHeaders.getFirstHeaderValue(CCHeader) != `` {
+		cc, err = oldHeaders.headers.AddressList(CCHeader)
 		if err != nil {
 			return
 		}
 	}
 
-	if headers.getFirstHeaderValue(BCCHeader) != `` {
-		bcc, err = headers.headers.AddressList(BCCHeader)
+	if oldHeaders.getFirstHeaderValue(BCCHeader) != `` {
+		bcc, err = oldHeaders.headers.AddressList(BCCHeader)
 		if err != nil {
 			return
 		}
 	}
 
-	subject = headers.getFirstHeaderValue(SubjectHeader)
+	subject = oldHeaders.getFirstHeaderValue(SubjectHeader)
 	if subject != `` {
 		subject, err = decoder.DecodeHeader(subject)
 		if err != nil {
@@ -215,7 +220,7 @@ func proccessHeadersAndExtractPrimaryHeaders(oldHeaders *headers) (headers *head
 		}
 	}
 
-	headers = headers.withoutHeader(FromHeader).
+	headers = oldHeaders.withoutHeader(FromHeader).
 		withoutHeader(ToHeader).
 		withoutHeader(CCHeader).
 		withoutHeader(BCCHeader).

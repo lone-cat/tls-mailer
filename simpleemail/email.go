@@ -250,9 +250,11 @@ func (e *Email) toPart() *part {
 		return mainPart
 	}
 
-	exportedPart := newPart()
-	exportedPart.headers = e.headers.clone()
-	exportedPart.subParts = append([]*part{mainPart}, e.attachments...)
+	exportedPart := &part{
+		headers:  e.headers.clone(),
+		subParts: append([]*part{mainPart}, e.attachments...),
+	}
+
 	if !exportedPart.headers.isMultipart() {
 		exportedPart.headers = exportedPart.headers.withHeader(`Content-Type`, MultipartMixed)
 	}

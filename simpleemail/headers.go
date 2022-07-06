@@ -48,8 +48,12 @@ func newHeaders() *headers {
 }
 
 func newHeadersFromMap(mailHeader mail.Header) *headers {
+	head := make(map[string][]string)
+	for headerName, headerValuesSlice := range mailHeader {
+		head[textproto.CanonicalMIMEHeaderKey(headerName)] = copySlice(headerValuesSlice)
+	}
 	return &headers{
-		headers: copyHeadersMap(mailHeader),
+		headers: head,
 	}
 }
 
@@ -94,6 +98,10 @@ func (h *headers) withoutHeader(header string) *headers {
 
 func (h *headers) getFirstHeaderValue(header string) string {
 	return h.headers.Get(header)
+}
+
+func (h *headers) getHeaderValues(header string) []string {
+	return copySlice(h.headers[textproto.CanonicalMIMEHeaderKey(header)])
 }
 
 func (h *headers) getContentType() (contentType string, err error) {

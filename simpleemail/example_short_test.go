@@ -1,4 +1,4 @@
-package simpleemail_test
+package simpleemail
 
 var exampleShort = "" +
 	"Content-Transfer-Encoding: quoted-printable\r\n" +

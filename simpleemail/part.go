@@ -33,9 +33,7 @@ func newPart() *part {
 }
 
 func newPartFromString(data string) (createdPart *part) {
-	createdPart = newPart()
-	createdPart = createdPart.withBody(data)
-	return
+	return newPart().withBody(data)
 }
 
 func newEmbeddedPartFromString(cid, data string) (embeddedPart *part) {
@@ -80,12 +78,11 @@ func newAttachedPartFromFile(filename string) (attachment *part, err error) {
 }
 
 func (p *part) clone() *part {
-	clonedPart := &part{
+	return &part{
 		headers:  p.headers,
 		body:     p.body,
 		subParts: p.subParts,
 	}
-	return clonedPart
 }
 
 func (p *part) getHeaders() *headers {
@@ -100,21 +97,20 @@ func (p *part) withHeaders(headers *headers) *part {
 	}
 }
 
-func (p *part) withHeadersFromMap(headers map[string][]string) *part {
-	return &part{
-		headers:  newHeadersFromMap(headers),
-		body:     p.body,
-		subParts: p.subParts,
-	}
-}
-
 func (p *part) GetBody() string {
 	return p.body
 }
 
-func (p *part) withBody(body string) *part {
+func (p *part) withBody(body string) (exportPart *part) {
+	var exportHeaders *headers
+	if body == `` {
+		exportHeaders = p.headers.withoutHeader(ContentTypeHeader)
+	} else {
+		exportHeaders = p.headers.withHeader(ContentTypeHeader, http.DetectContentType([]byte(body)))
+	}
+
 	return &part{
-		headers:  p.headers.withHeader(ContentTypeHeader, http.DetectContentType([]byte(body))),
+		headers:  exportHeaders,
 		body:     body,
 		subParts: p.subParts,
 	}

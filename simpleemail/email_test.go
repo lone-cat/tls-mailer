@@ -1,4 +1,4 @@
-package simpleemail_test
+package simpleemail
 
 import (
 	"fmt"

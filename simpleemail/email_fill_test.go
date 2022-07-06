@@ -1,13 +1,12 @@
-package simpleemail_test
+package simpleemail
 
 import (
-	"github.com/lone-cat/tls-mailer/simpleemail"
 	"os"
 	"testing"
 )
 
 func TestEmpty(t *testing.T) {
-	email := simpleemail.NewEmptyEmail()
+	email := NewEmptyEmail()
 	if email.GetText() != "" {
 		t.Errorf(`"Text" is "%s" in empty email`, email.GetText())
 	}
@@ -38,7 +37,7 @@ func TestEmpty(t *testing.T) {
 }
 
 func TestFill(t *testing.T) {
-	email := simpleemail.NewEmptyEmail().
+	email := NewEmptyEmail().
 		WithText(text).
 		WithHtml(html).
 		WithSubject(subject).

@@ -1,8 +1,7 @@
-package simpleemail_test
+package simpleemail
 
 import (
 	"fmt"
-	"github.com/lone-cat/tls-mailer/simpleemail"
 	"testing"
 )
 
@@ -12,12 +11,14 @@ func TestRoundtripCompile(t *testing.T) {
 	}
 }
 
-func testComiledCompare(email *simpleemail.Email, t *testing.T) {
+func testComiledCompare(email *Email, t *testing.T) {
 	emailString := email.String()
 
-	importedEmail, err := simpleemail.Import(emailString)
+	importedEmail, err := Import(emailString)
 	if err != nil {
 		fmt.Println(`import failed:`)
+		fmt.Println(emailString)
+
 		fmt.Println(err)
 		t.FailNow()
 	}

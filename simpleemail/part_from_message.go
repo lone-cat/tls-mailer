@@ -36,7 +36,10 @@ func convertSimpleMsgToPart(msg *mail.Message) (exportedPart *part, err error) {
 		err = stackerrors.WrapInDefer(err)
 	}()
 
-	exportedPart = newPart().withHeadersFromMap(msg.Header)
+	exportedPart = &part{
+		headers:  newHeadersFromMap(msg.Header),
+		subParts: newSubParts(),
+	}
 
 	var msgBodyBytes []byte
 	msgBodyBytes, err = io.ReadAll(msg.Body)
@@ -44,7 +47,7 @@ func convertSimpleMsgToPart(msg *mail.Message) (exportedPart *part, err error) {
 		return
 	}
 
-	exportedPart = exportedPart.withBody(string(msgBodyBytes))
+	exportedPart.body = string(msgBodyBytes)
 
 	exportedPart, err = unpackBody(exportedPart)
 
@@ -61,7 +64,10 @@ func convertMultipartMsgToPart(msg *mail.Message, boundary string) (exportedPart
 		return
 	}
 
-	exportedPart = newPart().withHeadersFromMap(msg.Header)
+	exportedPart = &part{
+		headers:  newHeadersFromMap(msg.Header),
+		subParts: newSubParts(),
+	}
 
 	convertedSubParts := newSubParts()
 	mr := multipart.NewReader(msg.Body, boundary)

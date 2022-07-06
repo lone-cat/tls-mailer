@@ -15,11 +15,11 @@ func newRelatedSubPart() *relatedSubPart {
 }
 
 func (p *relatedSubPart) clone() *relatedSubPart {
-	newMainPart := newRelatedSubPart()
-	newMainPart.headers = p.headers.clone()
-	newMainPart.alternativeSubPart = p.alternativeSubPart.clone()
-	newMainPart.embeddedSubParts = p.embeddedSubParts.clone()
-	return newMainPart
+	return &relatedSubPart{
+		headers:            p.headers.clone(),
+		alternativeSubPart: p.alternativeSubPart.clone(),
+		embeddedSubParts:   p.embeddedSubParts.clone(),
+	}
 }
 
 func (p *relatedSubPart) isEmpty() bool {
@@ -32,9 +32,10 @@ func (p *relatedSubPart) toPart() *part {
 		return alternativePart
 	}
 
-	exportedPart := newPart()
-	exportedPart.headers = p.headers.clone()
-	exportedPart.subParts = append([]*part{alternativePart}, p.embeddedSubParts...)
+	exportedPart := &part{
+		headers:  p.headers.clone(),
+		subParts: append([]*part{alternativePart}, p.embeddedSubParts...),
+	}
 	if !exportedPart.headers.isMultipart() {
 		exportedPart.headers = exportedPart.headers.withHeader(`Content-Type`, MultipartRelated)
 	}
