@@ -1,4 +1,4 @@
-package simpleemail
+package encode
 
 import (
 	"bytes"
@@ -15,9 +15,9 @@ const mimeLineLength = 76
 
 var base64LineSeparator = []byte("\r\n")
 
-var decoder = &mime.WordDecoder{}
+var Decoder = &mime.WordDecoder{}
 
-func toBase64(val string) (result string, err error) {
+func ToBase64(val string) (result string, err error) {
 	builder := &strings.Builder{}
 	lineSplitter := NewSplitter(builder, base64LineSeparator, mimeLineLength)
 	encoder := base64.NewEncoder(base64.StdEncoding, lineSplitter)
@@ -38,7 +38,7 @@ func toBase64(val string) (result string, err error) {
 	return builder.String(), nil
 }
 
-func fromBase64(val string) (string, error) {
+func FromBase64(val string) (string, error) {
 	bytess, err := base64.StdEncoding.DecodeString(val)
 	if err != nil {
 		return ``, err
@@ -47,7 +47,7 @@ func fromBase64(val string) (string, error) {
 	return string(bytess), nil
 }
 
-func toQuotedPrintable(s string) (string, error) {
+func ToQuotedPrintable(s string) (string, error) {
 	var ac bytes.Buffer
 	w := quotedprintable.NewWriter(&ac)
 	_, err := w.Write([]byte(s))
@@ -61,7 +61,7 @@ func toQuotedPrintable(s string) (string, error) {
 	return ac.String(), nil
 }
 
-func fromQuotedPrintable(s string) (string, error) {
+func FromQuotedPrintable(s string) (string, error) {
 	r := quotedprintable.NewReader(strings.NewReader(s))
 	result, err := io.ReadAll(r)
 	if err != nil {
@@ -71,15 +71,15 @@ func fromQuotedPrintable(s string) (string, error) {
 	return res, nil
 }
 
-func encodeHeader(headerValue string) string {
+func EncodeHeader(headerValue string) string {
 	return mime.QEncoding.Encode("utf-8", headerValue)
 }
 
-func encodedHeaderToMultiline1(encodedHeader string) string {
+func EncodedHeaderToMultiline1(encodedHeader string) string {
 	return strings.ReplaceAll(encodedHeader, `?= =?`, "?=\r\n =?")
 }
 
-func encodedHeaderToMultiline(encodedHeader string) string {
+func EncodedHeaderToMultiline(encodedHeader string) string {
 	sourceParts := strings.Split(encodedHeader, ` `)
 	resultLines := make([]string, 0)
 	line := []string{sourceParts[0]}
@@ -97,4 +97,8 @@ func encodedHeaderToMultiline(encodedHeader string) string {
 	}
 
 	return strings.Join(resultLines, "\r\n ")
+}
+
+func DecodeHeader(header string) (string, error) {
+	return Decoder.DecodeHeader(header)
 }

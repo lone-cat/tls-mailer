@@ -2,12 +2,14 @@ package simpleemail
 
 import (
 	"errors"
+	"github.com/lone-cat/tls-mailer/simpleemail/headers"
+	"github.com/lone-cat/tls-mailer/simpleemail/part"
 	"net/mail"
 	"strings"
 )
 
 type Email struct {
-	headers *headers
+	headers headers.Headers
 
 	from addresses
 	to   addresses
@@ -18,12 +20,12 @@ type Email struct {
 
 	mainPart *relatedSubPart
 
-	attachments subParts
+	attachments part.subParts
 }
 
 func NewEmptyEmail() *Email {
 	return &Email{
-		headers: newHeaders(),
+		headers: headers.NewHeaders(),
 
 		from: newAddresses(),
 		to:   newAddresses(),
@@ -32,7 +34,7 @@ func NewEmptyEmail() *Email {
 
 		mainPart: newRelatedSubPart(),
 
-		attachments: newSubParts(),
+		attachments: part.newSubParts(),
 	}
 }
 
@@ -107,7 +109,7 @@ func (e *Email) WithHtml(html string) *Email {
 }
 
 func (e *Email) WithEmbeddedFile(cid string, filename string) (*Email, error) {
-	embedded, err := newEmbeddedPartFromFile(cid, filename)
+	embedded, err := part.newEmbeddedPartFromFile(cid, filename)
 	if err != nil {
 		return e, err
 	}
@@ -118,12 +120,12 @@ func (e *Email) WithEmbeddedFile(cid string, filename string) (*Email, error) {
 
 func (e *Email) WithoutEmbeddedFiles() *Email {
 	newEmail := e.clone()
-	newEmail.mainPart.embeddedSubParts = newSubParts()
+	newEmail.mainPart.embeddedSubParts = part.newSubParts()
 	return newEmail
 }
 
 func (e *Email) WithAttachedFile(filename string) (*Email, error) {
-	attachment, err := newAttachedPartFromFile(filename)
+	attachment, err := part.newAttachedPartFromFile(filename)
 	if err != nil {
 		return e, err
 	}
@@ -134,7 +136,7 @@ func (e *Email) WithAttachedFile(filename string) (*Email, error) {
 
 func (e *Email) WithoutAttachedFiles() *Email {
 	newEmail := e.clone()
-	newEmail.attachments = newSubParts()
+	newEmail.attachments = part.newSubParts()
 	return newEmail
 }
 
@@ -151,7 +153,7 @@ func (e *Email) Compile() ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		exportedPart.headers = exportedPart.headers.withHeader(`from`, froms)
+		exportedPart.headers = exportedPart.headers.WithHeader(`from`, froms)
 	}
 
 	rcpts := make([]string, 0)
@@ -166,7 +168,7 @@ func (e *Email) Compile() ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		exportedPart.headers = exportedPart.headers.withHeader(`to`, tos)
+		exportedPart.headers = exportedPart.headers.WithHeader(`to`, tos)
 	}
 	if len(e.cc) > 0 {
 		cc := make([]string, len(e.cc))
@@ -179,7 +181,7 @@ func (e *Email) Compile() ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		exportedPart.headers = exportedPart.headers.withHeader(`cc`, ccs)
+		exportedPart.headers = exportedPart.headers.WithHeader(`cc`, ccs)
 	}
 	if len(e.bcc) > 0 {
 		bcc := make([]string, len(e.bcc))
@@ -192,10 +194,10 @@ func (e *Email) Compile() ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		exportedPart.headers = exportedPart.headers.withHeader(`bcc`, bccs)
+		exportedPart.headers = exportedPart.headers.WithHeader(`bcc`, bccs)
 	}
 	if e.subject != `` {
-		exportedPart.headers = exportedPart.headers.withHeader(`subject`, e.subject)
+		exportedPart.headers = exportedPart.headers.WithHeader(`subject`, e.subject)
 	}
 
 	return exportedPart.compile()
@@ -243,20 +245,20 @@ func (e *Email) clone() *Email {
 	return newEmail
 }
 
-func (e *Email) toPart() *part {
+func (e *Email) toPart() *part.part {
 	mainPart := e.mainPart.toPart()
 
 	if len(e.attachments) < 1 {
 		return mainPart
 	}
 
-	exportedPart := &part{
+	exportedPart := &part.part{
 		headers:  e.headers.clone(),
-		subParts: append([]*part{mainPart}, e.attachments...),
+		subParts: append([]*part.part{mainPart}, e.attachments...),
 	}
 
-	if !exportedPart.headers.isMultipart() {
-		exportedPart.headers = exportedPart.headers.withHeader(`Content-Type`, MultipartMixed)
+	if !exportedPart.headers.IsMultipart() {
+		exportedPart.headers = exportedPart.headers.WithHeader(`Content-Type`, part.MultipartMixed)
 	}
 
 	return exportedPart

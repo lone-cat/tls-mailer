@@ -1,16 +1,21 @@
 package simpleemail
 
+import (
+	"github.com/lone-cat/tls-mailer/simpleemail/headers"
+	"github.com/lone-cat/tls-mailer/simpleemail/part"
+)
+
 type relatedSubPart struct {
-	headers            *headers
+	headers            headers.Headers
 	alternativeSubPart *alternativeSubPart
-	embeddedSubParts   subParts
+	embeddedSubParts   part.subParts
 }
 
 func newRelatedSubPart() *relatedSubPart {
 	return &relatedSubPart{
-		headers:            newHeaders(),
+		headers:            headers.NewHeaders(),
 		alternativeSubPart: newAlternativeSubPart(),
-		embeddedSubParts:   newSubParts(),
+		embeddedSubParts:   part.newSubParts(),
 	}
 }
 
@@ -26,18 +31,18 @@ func (p *relatedSubPart) isEmpty() bool {
 	return p.alternativeSubPart.isEmpty() && len(p.embeddedSubParts) < 1
 }
 
-func (p *relatedSubPart) toPart() *part {
+func (p *relatedSubPart) toPart() *part.part {
 	alternativePart := p.alternativeSubPart.toPart()
 	if len(p.embeddedSubParts) < 1 {
 		return alternativePart
 	}
 
-	exportedPart := &part{
+	exportedPart := &part.part{
 		headers:  p.headers.clone(),
-		subParts: append([]*part{alternativePart}, p.embeddedSubParts...),
+		subParts: append([]*part.part{alternativePart}, p.embeddedSubParts...),
 	}
-	if !exportedPart.headers.isMultipart() {
-		exportedPart.headers = exportedPart.headers.withHeader(`Content-Type`, MultipartRelated)
+	if !exportedPart.headers.IsMultipart() {
+		exportedPart.headers = exportedPart.headers.WithHeader(`Content-Type`, part.MultipartRelated)
 	}
 
 	return exportedPart

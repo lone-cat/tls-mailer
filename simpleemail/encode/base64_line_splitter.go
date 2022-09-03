@@ -1,4 +1,4 @@
-package simpleemail
+package encode
 
 import "io"
 

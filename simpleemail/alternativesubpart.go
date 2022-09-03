@@ -1,74 +1,86 @@
 package simpleemail
 
+import (
+	headers2 "github.com/lone-cat/tls-mailer/simpleemail/headers"
+	"github.com/lone-cat/tls-mailer/simpleemail/part"
+)
+
 type alternativeSubPart struct {
-	headers  *headers
-	textPart *part
-	htmlPart *part
+	headers  headers2.Headers
+	textPart part.Part
+	htmlPart part.Part
 }
 
 func newAlternativeSubPart() *alternativeSubPart {
 	return &alternativeSubPart{
-		headers:  newHeaders(),
-		textPart: newPart(),
-		htmlPart: newPart(),
+		headers:  headers2.NewHeaders(),
+		textPart: part.NewPart(),
+		htmlPart: part.NewPart(),
 	}
 }
 
 func (p *alternativeSubPart) clone() *alternativeSubPart {
-	clonedPart := newAlternativeSubPart()
-	clonedPart.headers = p.headers.clone()
-	clonedPart.textPart = p.textPart.clone()
-	clonedPart.htmlPart = p.htmlPart.clone()
-	return clonedPart
+	return &alternativeSubPart{
+		headers:  p.headers,
+		textPart: p.textPart,
+		htmlPart: p.htmlPart,
+	}
 }
 
 func (p *alternativeSubPart) withText(text string) *alternativeSubPart {
 	clonedPart := p.clone()
-	clonedPart.textPart = clonedPart.textPart.withBody(text)
+	clonedPart.textPart = clonedPart.textPart.WithBody(text)
 	return clonedPart
 }
 
 func (p *alternativeSubPart) withHtml(html string) *alternativeSubPart {
 	clonedPart := p.clone()
-	clonedPart.htmlPart = clonedPart.htmlPart.withBody(html)
+	clonedPart.htmlPart = clonedPart.htmlPart.WithBody(html)
 	return clonedPart
 }
 
 func (p *alternativeSubPart) isTextEmpty() bool {
-	return p.textPart.body == ``
+	return p.textPart.GetBody() == ``
 }
 
 func (p *alternativeSubPart) isHtmlEmpty() bool {
-	return p.htmlPart.body == ``
+	return p.htmlPart.GetBody() == ``
 }
 
 func (p *alternativeSubPart) isEmpty() bool {
 	return p.isTextEmpty() && p.isHtmlEmpty()
 }
 
-func (p *alternativeSubPart) toPart() *part {
+func (p *alternativeSubPart) toPart() part.Part {
 	if p.isEmpty() {
-		return newPart()
+		return part.NewPart()
 	}
 
 	if p.isHtmlEmpty() {
-		return p.textPart.clone()
+		return p.textPart
 	}
 
 	if p.isTextEmpty() {
-		return p.htmlPart.clone()
+		return p.htmlPart
 	}
 
-	exportedPart := newPart()
-	exportedPart.headers = p.headers.clone()
-	exportedPart.subParts = []*part{p.textPart.clone(), p.htmlPart.clone()}
-	if !exportedPart.headers.isMultipart() {
-		exportedPart.headers = exportedPart.headers.withHeader(`Content-Type`, MultipartAlternative)
+	exportedPart := part.NewPart()
+	exportedPart = exportedPart.WithHeaders(p.headers)
+	if !exportedPart.GetHeaders().IsMultipart() {
+		exportedPart = exportedPart.WithHeaders(
+			exportedPart.GetHeaders().
+				WithHeader(
+					`Content-Type`,
+					part.MultipartAlternative,
+				),
+		)
 	}
+
+	exportedPart = exportedPart.WithSubParts([]part.Part{p.textPart, p.htmlPart})
 
 	return exportedPart
 }
 
 func (p *alternativeSubPart) compile() ([]byte, error) {
-	return p.toPart().compile()
+	return p.toPart().Compile()
 }

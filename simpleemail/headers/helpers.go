@@ -1,4 +1,6 @@
-package simpleemail
+package headers
+
+import "fmt"
 
 func copySlice[T any](src []T) []T {
 	dst := make([]T, len(src))
@@ -12,4 +14,11 @@ func copyHeadersMap(src map[string][]string) map[string][]string {
 		dst[headerName] = copySlice(headerValuesSlice)
 	}
 	return dst
+}
+
+var i = 1
+
+func GenerateBoundary() string {
+	i++
+	return fmt.Sprintf(`bound%d`, i)
 }

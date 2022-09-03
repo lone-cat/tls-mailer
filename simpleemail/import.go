@@ -2,6 +2,7 @@ package simpleemail
 
 import (
 	"github.com/lone-cat/stackerrors"
+	"github.com/lone-cat/tls-mailer/simpleemail/part"
 	"net/mail"
 	"strings"
 )
@@ -17,8 +18,8 @@ func Import(message string) (email *Email, err error) {
 		return
 	}
 
-	var convertedPart *part
-	convertedPart, err = convertMessageToPartRecursive(msg)
+	var convertedPart *part.part
+	convertedPart, err = part.convertMessageToPartRecursive(msg)
 	if err != nil {
 		return
 	}
