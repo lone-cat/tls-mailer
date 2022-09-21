@@ -16,7 +16,7 @@ import (
 
 func (p *part) ToPlainMessage() (msg *mail.Message, err error) {
 	clonedHeaders := p.GetHeaders()
-	if len(p.subParts.parts) < 1 {
+	if len(p.subParts.ExtractPartsSlice()) < 1 {
 
 		var encodedBody string
 
@@ -51,14 +51,15 @@ func (p *part) ToPlainMessage() (msg *mail.Message, err error) {
 		}, nil
 	}
 
-	if len(p.subParts.parts) == 1 {
-		return p.subParts.parts[0].ToPlainMessage()
+	subPartsSlice := p.subParts.ExtractPartsSlice()
+	if len(subPartsSlice) == 1 {
+		return subPartsSlice[0].ToPlainMessage()
 	}
 
 	contentType, params, _ := mime.ParseMediaType(clonedHeaders.GetFirstHeaderValue(headers.ContentTypeHeader))
 	needRegenerateHeader := false
-	if !strings.HasPrefix(contentType, MultipartPrefix) {
-		contentType = MultipartMixed
+	if !strings.HasPrefix(contentType, headers.MultipartPrefix) {
+		contentType = headers.MultipartMixed
 		needRegenerateHeader = true
 	}
 	boundary, exists := params[`boundary`]
@@ -89,7 +90,7 @@ func (p *part) ToPlainMessage() (msg *mail.Message, err error) {
 	var partWriter io.Writer
 	var subMsgBodyBytes []byte
 
-	for _, subPart := range p.subParts.parts {
+	for _, subPart := range p.subParts.ExtractPartsSlice() {
 		subMsg, err = subPart.ToPlainMessage()
 		if err != nil {
 			return

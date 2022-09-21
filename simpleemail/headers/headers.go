@@ -114,6 +114,10 @@ func (h *headers) WithoutHeader(header string) Headers {
 	}
 }
 
+func (h *headers) Clone() Headers {
+	return NewHeadersFromMap(h.headers)
+}
+
 func (h *headers) GetFirstHeaderValue(header string) string {
 	return h.headers.Get(header)
 }

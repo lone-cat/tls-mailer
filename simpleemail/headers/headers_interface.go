@@ -10,6 +10,7 @@ type Headers interface {
 	WithHeader(header string, values ...string) Headers
 	WithAddedHeader(header string, values ...string) Headers
 	WithoutHeader(header string) Headers
+	Clone() Headers
 	GetFirstHeaderValue(header string) string
 	GetHeaderValues(header string) []string
 	GetContentType() (string, error)

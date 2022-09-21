@@ -1,6 +1,7 @@
 package simpleemail
 
 import (
+	"github.com/lone-cat/tls-mailer/simpleemail/test"
 	"os"
 	"testing"
 )
@@ -38,55 +39,55 @@ func TestEmpty(t *testing.T) {
 
 func TestFill(t *testing.T) {
 	email := NewEmptyEmail().
-		WithText(text).
-		WithHtml(html).
-		WithSubject(subject).
-		WithFrom(from).
-		WithTo(to).
-		WithCc(cc).
-		WithBcc(bcc)
+		WithText(test.text).
+		WithHtml(test.html).
+		WithSubject(test.subject).
+		WithFrom(test.from).
+		WithTo(test.to).
+		WithCc(test.cc).
+		WithBcc(test.bcc)
 	email, err := email.
-		WithEmbeddedFile(cid, embedded)
+		WithEmbeddedFile(test.cid, test.embedded)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	email, err = email.
-		WithAttachedFile(attached)
+		WithAttachedFile(test.attached)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if email.GetText() != text {
-		t.Errorf(`"Text" filled incorrectly. expected %#v, got %#v`, text, email.GetText())
+	if email.GetText() != test.text {
+		t.Errorf(`"Text" filled incorrectly. expected %#v, got %#v`, test.text, email.GetText())
 	}
-	if email.GetHtml() != html {
-		t.Errorf(`"Html" filled incorrectly. expected %#v, got %#v`, html, email.GetHtml())
+	if email.GetHtml() != test.html {
+		t.Errorf(`"Html" filled incorrectly. expected %#v, got %#v`, test.html, email.GetHtml())
 	}
-	if email.GetSubject() != subject {
-		t.Errorf(`"Subject" filled incorrectly. expected %#v, got %#v`, subject, email.GetSubject())
+	if email.GetSubject() != test.subject {
+		t.Errorf(`"Subject" filled incorrectly. expected %#v, got %#v`, test.subject, email.GetSubject())
 		t.Fail()
 	}
-	if !addressSlicesEqual(email.GetFrom(), from) {
-		t.Errorf(`"From" filled incorrectly. expected %#v, got %#v`, from, email.GetFrom())
+	if !addressSlicesEqual(email.GetFrom(), test.from) {
+		t.Errorf(`"From" filled incorrectly. expected %#v, got %#v`, test.from, email.GetFrom())
 	}
-	if !addressSlicesEqual(email.GetTo(), to) {
-		t.Errorf(`"To" filled incorrectly. expected %#v, got %#v`, to, email.GetTo())
+	if !addressSlicesEqual(email.GetTo(), test.to) {
+		t.Errorf(`"To" filled incorrectly. expected %#v, got %#v`, test.to, email.GetTo())
 	}
-	if !addressSlicesEqual(email.GetCc(), cc) {
-		t.Errorf(`"Cc" filled incorrectly. expected %#v, got %#v`, cc, email.GetCc())
+	if !addressSlicesEqual(email.GetCc(), test.cc) {
+		t.Errorf(`"Cc" filled incorrectly. expected %#v, got %#v`, test.cc, email.GetCc())
 	}
-	if !addressSlicesEqual(email.GetBcc(), bcc) {
-		t.Errorf(`"Bcc" filled incorrectly. expected %#v, got %#v`, bcc, email.GetBcc())
+	if !addressSlicesEqual(email.GetBcc(), test.bcc) {
+		t.Errorf(`"Bcc" filled incorrectly. expected %#v, got %#v`, test.bcc, email.GetBcc())
 	}
-	dataBytes, err := os.ReadFile(embedded)
+	dataBytes, err := os.ReadFile(test.embedded)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if email.GetEmbedded()[0].GetBody() != string(dataBytes) {
 		t.Errorf(`"Embedded body" filled incorrectly. expected %#v, got %#v`, string(dataBytes), email.GetEmbedded()[0].GetBody())
 	}
-	dataBytes, err = os.ReadFile(attached)
+	dataBytes, err = os.ReadFile(test.attached)
 	if err != nil {
 		t.Fatal(err)
 	}

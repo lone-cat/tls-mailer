@@ -2,11 +2,12 @@ package simpleemail
 
 import (
 	"fmt"
+	"github.com/lone-cat/tls-mailer/simpleemail/test"
 	"testing"
 )
 
 func TestRoundtripCompile(t *testing.T) {
-	for _, em := range emailsForTest {
+	for _, em := range test.emailsForTest {
 		testComiledCompare(em, t)
 	}
 }

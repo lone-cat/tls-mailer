@@ -5,9 +5,19 @@ import (
 	"testing"
 )
 
+func TestCloneImmutability(t *testing.T) {
+	h := NewHeaders().WithAddedHeader(`to`, `s`).WithAddedHeader(`from`, `s`)
+	h2 := h.Clone()
+	h = h.WithoutHeader(`to`)
+
+	if reflect.DeepEqual(h, h2) {
+		t.Errorf(`Clone() func immutability failure`)
+	}
+}
+
 func TestWithHeaderImmutability(t *testing.T) {
 	h := NewHeaders().WithHeader(`from`, `s`)
-	h2 := h.clone()
+	h2 := h.Clone()
 	_ = h.WithHeader(`to`, `s`)
 
 	if !reflect.DeepEqual(h, h2) {
@@ -17,7 +27,7 @@ func TestWithHeaderImmutability(t *testing.T) {
 
 func TestWithoutHeaderImmutability(t *testing.T) {
 	h := NewHeaders().WithHeader(`to`, `s`).WithHeader(`from`, `s`)
-	h2 := h.clone()
+	h2 := h.Clone()
 	_ = h.WithoutHeader(`to`)
 
 	if !reflect.DeepEqual(h, h2) {
@@ -27,7 +37,7 @@ func TestWithoutHeaderImmutability(t *testing.T) {
 
 func TestWithAddedHeaderImmutability(t *testing.T) {
 	h := NewHeaders().WithAddedHeader(`to`, `s`).WithAddedHeader(`from`, `s`)
-	h2 := h.clone()
+	h2 := h.Clone()
 	_ = h.WithAddedHeader(`to`, `f`)
 
 	if !reflect.DeepEqual(h, h2) {
@@ -38,21 +48,10 @@ func TestWithAddedHeaderImmutability(t *testing.T) {
 func TestNewHeadersFromMapImmutability(t *testing.T) {
 	testMap := map[string][]string{`To`: {`a`}, `From`: {`b`}}
 	h := NewHeadersFromMap(testMap)
-	h2 := h.clone()
+	h2 := h.Clone()
 	testMap[`To`][0] = `b`
 
-	if !reflect.DeepEqual(h, h2) || reflect.DeepEqual(map[string][]string(h.headers), testMap) {
-		t.Errorf(`NewHeadersFromMap() func immutability failure`)
-	}
-}
-
-func TestHeadersCloneImmutability(t *testing.T) {
-	testMap := map[string][]string{`To`: {`a`}, `From`: {`b`}}
-	h := NewHeadersFromMap(testMap)
-	h2 := h.clone()
-	h2.headers[`To`][0] = `b`
-
-	if reflect.DeepEqual(h, h2) {
+	if !reflect.DeepEqual(h, h2) || reflect.DeepEqual(h.ExtractHeadersMap(), testMap) {
 		t.Errorf(`NewHeadersFromMap() func immutability failure`)
 	}
 }
@@ -70,7 +69,7 @@ func TestExtractHeadersImmutability(t *testing.T) {
 
 func TestGetHeaderValuesImmutability(t *testing.T) {
 	h := NewHeaders().WithAddedHeader(`to`, `s`).WithAddedHeader(`from`, `s`)
-	h2 := h.clone()
+	h2 := h.Clone()
 	headerSlice := h.GetHeaderValues(`to`)
 	headerSlice[0] = `b`
 

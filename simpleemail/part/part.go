@@ -12,13 +12,13 @@ import (
 type part struct {
 	headers  headers.Headers
 	body     string
-	subParts *partsList
+	subParts PartsList
 }
 
 func NewPart() Part {
 	return &part{
 		headers:  headers.NewHeaders(),
-		subParts: newPartsList(),
+		subParts: NewPartsList(),
 	}
 }
 
@@ -132,15 +132,15 @@ func (p *part) WithBody(body string) (exportPart Part) {
 	}
 }
 
-func (p *part) GetSubParts() *partsList {
-	return p.subParts
+func (p *part) GetSubParts() []Part {
+	return p.subParts.ExtractPartsSlice()
 }
 
-func (p *part) WithSubParts(subPartsList *partsList) Part {
+func (p *part) WithSubParts(subParts ...Part) Part {
 	return &part{
 		headers:  p.headers,
 		body:     p.body,
-		subParts: subPartsList,
+		subParts: NewPartsList(subParts...),
 	}
 }
 

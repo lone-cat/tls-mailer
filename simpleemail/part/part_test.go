@@ -1,7 +1,6 @@
 package part
 
 import (
-	"github.com/lone-cat/tls-mailer/simpleemail"
 	"github.com/lone-cat/tls-mailer/simpleemail/headers"
 	"reflect"
 	"testing"
@@ -28,75 +27,76 @@ func TestNewPartFromString(t *testing.T) {
 
 func TestPartClone(t *testing.T) {
 	h := headers.NewHeaders().WithAddedHeader(`to`, `s`).WithAddedHeader(`from`, `d`)
+	sp := NewPartsList(&part{headers: h.Clone(), body: text, subParts: NewPartsList()})
 	p := NewPart().
 		WithHeaders(h).
-		WithBody(simpleemail.text).
-		WithSubParts([]*part{{headers: h.clone(), body: simpleemail.text, subParts: simpleemail.newSubParts()}})
+		WithBody(text).
+		WithSubParts(sp.ExtractPartsSlice()...)
 
 	p2 := p.Clone()
 
 	if p == p2 {
 		t.Errorf(`part.clone() failure: pointers are equal`)
 	}
-	if !reflect.DeepEqual(p.headers, p2.headers) {
+	if !reflect.DeepEqual(p.(*part).headers, p2.(*part).headers) {
 		t.Errorf(`part.clone() failure: header maps differ`)
 	}
-	if p.body != p2.body {
+	if p.(*part).body != p2.(*part).body {
 		t.Errorf(`part.clone() failure: bodies differ`)
 	}
-	if !reflect.DeepEqual(p.subParts, p2.subParts) {
+	if !reflect.DeepEqual(p.(*part).subParts, p2.(*part).subParts) {
 		t.Errorf(`part.clone() failure: subParts differ`)
 	}
 }
 
 func TestPartGetHeaders(t *testing.T) {
 	h := headers.NewHeaders().WithAddedHeader(`to`, `s`).WithAddedHeader(`from`, `d`)
-	p := newPart().withHeaders(h)
-	h2 := p.getHeaders()
-	if !reflect.DeepEqual(p.headers, h2) {
+	p := NewPart().WithHeaders(h)
+	h2 := p.GetHeaders()
+	if !reflect.DeepEqual(p.(*part).headers, h2) {
 		t.Errorf(`part.getHeaders() failure: headers map differ`)
 	}
 }
 
 func TestPartWithHeaders(t *testing.T) {
 	h := headers.NewHeaders().WithAddedHeader(`to`, `s`).WithAddedHeader(`from`, `d`)
-	p := newPart().withHeaders(h)
-	if !reflect.DeepEqual(p.headers, h) {
+	p := NewPart().WithHeaders(h)
+	if !reflect.DeepEqual(p.(*part).headers, h) {
 		t.Errorf(`part.withHeaders() failure: headers map differ`)
 	}
 }
 
 func TestPartGetBody(t *testing.T) {
-	p := newPart()
-	p.body = simpleemail.text
-	if p.GetBody() != simpleemail.text {
+	p := NewPart()
+	p.(*part).body = text
+	if p.GetBody() != text {
 		t.Errorf(`part.GetBody() failure: body differ`)
 	}
 }
 
 func TestPartWithBody(t *testing.T) {
-	p := newPart().withBody(simpleemail.text)
-	if p.body != simpleemail.text {
+	p := NewPart().WithBody(text)
+	if p.(*part).body != text {
 		t.Errorf(`part.withBody() failure: body differ`)
 	}
 }
 
 func TestPartGetSubparts(t *testing.T) {
 	h := headers.NewHeaders().WithAddedHeader(`to`, `s`).WithAddedHeader(`from`, `d`)
-	subP := []*part{{headers: h.clone(), body: simpleemail.text, subParts: simpleemail.newSubParts()}}
-	p := newPart()
-	p.subParts = subP
-	gotSubParts := p.getSubParts()
-	if !reflect.DeepEqual(gotSubParts, simpleemail.subParts(subP)) {
+	subP := NewPartsList(&part{headers: h.Clone(), body: text, subParts: NewPartsList()})
+	p := NewPart()
+	p.(*part).subParts = subP
+	gotSubParts := p.GetSubParts()
+	if !reflect.DeepEqual(gotSubParts, subP.(*partsList).parts) {
 		t.Errorf(`part.getSubParts() failure: subparts differ`)
 	}
 }
 
 func TestPartWithSubparts(t *testing.T) {
 	h := headers.NewHeaders().WithAddedHeader(`to`, `s`).WithAddedHeader(`from`, `d`)
-	subP := []*part{{headers: h.clone(), body: simpleemail.text, subParts: simpleemail.newSubParts()}}
-	p := newPart().withSubParts(subP)
-	if !reflect.DeepEqual(p.subParts, simpleemail.subParts(subP)) {
+	subP := NewPartsList(&part{headers: h.Clone(), body: text, subParts: NewPartsList()})
+	p := NewPart().WithSubParts(subP.ExtractPartsSlice()...)
+	if !reflect.DeepEqual(p.(*part).subParts, subP) {
 		t.Errorf(`part.withSubParts() failure: subparts differ`)
 	}
 }

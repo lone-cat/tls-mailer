@@ -10,8 +10,8 @@ type Part interface {
 	WithHeaders(headers headers.Headers) Part
 	GetBody() string
 	WithBody(body string) Part
-	GetSubParts() *partsList
-	WithSubParts(subParts *partsList) Part
+	GetSubParts() []Part
+	WithSubParts(subParts ...Part) Part
 	Compile() ([]byte, error)
 	ToPlainMessage() (*mail.Message, error)
 	Clone() Part

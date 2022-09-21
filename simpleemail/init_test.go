@@ -3,6 +3,7 @@ package simpleemail
 import (
 	"fmt"
 	"github.com/lone-cat/stackerrors"
+	"github.com/lone-cat/tls-mailer/simpleemail"
 	"net/mail"
 )
 
@@ -37,7 +38,7 @@ var (
 	attached = `../test_attachments/image2.jpg`
 )
 
-var emailsForTest = make([]*Email, 0)
+var emailsForTest = make([]*simpleemail.Email, 0)
 
 func init() {
 	a := make(map[string][]string)
@@ -46,7 +47,7 @@ func init() {
 	fmt.Println(&a == &b)
 	stackerrors.SetDebugMode(true)
 
-	email := NewEmptyEmail()
+	email := simpleemail.NewEmptyEmail()
 	emailsForTest = append(emailsForTest, email)
 
 	email = email.

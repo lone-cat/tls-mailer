@@ -60,21 +60,10 @@ func TestCompile(t *testing.T) {
 	}
 }
 
-func TestHeadersClone(t *testing.T) {
-	h := NewHeaders().WithAddedHeader(`to`, `s`).WithAddedHeader(`from`, `d`)
-	h2 := h.(*headers).clone()
-	if h == h2 {
-		t.Errorf(`headers.clone() failure: pointers are equal`)
-	}
-	if !reflect.DeepEqual(h.headers, h2.headers) {
-		t.Errorf(`headers.clone() failure: inner maps differ`)
-	}
-}
-
 func TestHeadersExtract(t *testing.T) {
 	h := NewHeaders().WithAddedHeader(`to`, `s`).WithAddedHeader(`from`, `d`)
 	h2 := h.ExtractHeadersMap()
-	if !reflect.DeepEqual(map[string][]string(h.headers), h2) {
+	if !reflect.DeepEqual(h.ExtractHeadersMap(), h2) {
 		t.Errorf(`headers.ExtractHeadersMap() failure: extracted map differ`)
 	}
 }
@@ -82,7 +71,7 @@ func TestHeadersExtract(t *testing.T) {
 func TestHeadersFromMap(t *testing.T) {
 	testMap := map[string][]string{`To`: {`a`}, `From`: {`b`}}
 	h := NewHeadersFromMap(testMap)
-	if !reflect.DeepEqual(map[string][]string(h.headers), testMap) {
+	if !reflect.DeepEqual(h.ExtractHeadersMap(), testMap) {
 		t.Errorf(`headers.NewHeadersFromMap() failure: imported map differ`)
 	}
 }

@@ -1,19 +1,19 @@
 package simpleemail
 
 import (
-	headers2 "github.com/lone-cat/tls-mailer/simpleemail/headers"
+	"github.com/lone-cat/tls-mailer/simpleemail/headers"
 	"github.com/lone-cat/tls-mailer/simpleemail/part"
 )
 
 type alternativeSubPart struct {
-	headers  headers2.Headers
+	headers  headers.Headers
 	textPart part.Part
 	htmlPart part.Part
 }
 
 func newAlternativeSubPart() *alternativeSubPart {
 	return &alternativeSubPart{
-		headers:  headers2.NewHeaders(),
+		headers:  headers.NewHeaders(),
 		textPart: part.NewPart(),
 		htmlPart: part.NewPart(),
 	}
@@ -71,7 +71,7 @@ func (p *alternativeSubPart) toPart() part.Part {
 			exportedPart.GetHeaders().
 				WithHeader(
 					`Content-Type`,
-					part.MultipartAlternative,
+					headers.MultipartAlternative,
 				),
 		)
 	}
