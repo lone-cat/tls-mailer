@@ -18,8 +18,8 @@ func Import(message string) (email *Email, err error) {
 		return
 	}
 
-	var convertedPart *part.part
-	convertedPart, err = part.convertMessageToPartRecursive(msg)
+	var convertedPart part.Part
+	convertedPart, err = part.ConvertMessageToPartRecursive(msg)
 	if err != nil {
 		return
 	}

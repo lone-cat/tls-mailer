@@ -20,7 +20,7 @@ type Email struct {
 
 	mainPart *relatedSubPart
 
-	attachments part.subParts
+	attachments part.PartsList
 }
 
 func NewEmptyEmail() *Email {
@@ -34,7 +34,7 @@ func NewEmptyEmail() *Email {
 
 		mainPart: newRelatedSubPart(),
 
-		attachments: part.newSubParts(),
+		attachments: part.NewPartsList(),
 	}
 }
 
@@ -59,11 +59,11 @@ func (e *Email) GetSubject() string {
 }
 
 func (e *Email) GetText() string {
-	return e.mainPart.alternativeSubPart.textPart.body
+	return e.mainPart.alternativeSubPart.textPart.GetBody()
 }
 
 func (e *Email) GetHtml() string {
-	return e.mainPart.alternativeSubPart.htmlPart.body
+	return e.mainPart.alternativeSubPart.htmlPart.GetBody()
 }
 
 func (e *Email) WithFrom(from []*mail.Address) *Email {
@@ -109,34 +109,34 @@ func (e *Email) WithHtml(html string) *Email {
 }
 
 func (e *Email) WithEmbeddedFile(cid string, filename string) (*Email, error) {
-	embedded, err := part.newEmbeddedPartFromFile(cid, filename)
+	embedded, err := part.NewEmbeddedPartFromFile(cid, filename)
 	if err != nil {
 		return e, err
 	}
 	newEmail := e.clone()
-	newEmail.mainPart.embeddedSubParts = append(newEmail.mainPart.embeddedSubParts, embedded)
+	newEmail.mainPart.embeddedSubParts = newEmail.mainPart.embeddedSubParts.WithAppended(embedded)
 	return newEmail, nil
 }
 
 func (e *Email) WithoutEmbeddedFiles() *Email {
 	newEmail := e.clone()
-	newEmail.mainPart.embeddedSubParts = part.newSubParts()
+	newEmail.mainPart.embeddedSubParts = part.NewPartsList()
 	return newEmail
 }
 
 func (e *Email) WithAttachedFile(filename string) (*Email, error) {
-	attachment, err := part.newAttachedPartFromFile(filename)
+	attachment, err := part.NewAttachedPartFromFile(filename)
 	if err != nil {
 		return e, err
 	}
 	newEmail := e.clone()
-	newEmail.attachments = append(newEmail.attachments, attachment)
+	newEmail.attachments = newEmail.attachments.WithAppended(attachment)
 	return newEmail, nil
 }
 
 func (e *Email) WithoutAttachedFiles() *Email {
 	newEmail := e.clone()
-	newEmail.attachments = part.newSubParts()
+	newEmail.attachments = part.NewPartsList()
 	return newEmail
 }
 
@@ -153,7 +153,7 @@ func (e *Email) Compile() ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		exportedPart.headers = exportedPart.headers.WithHeader(`from`, froms)
+		exportedPart = exportedPart.WithHeaders(exportedPart.GetHeaders().WithHeader(`from`, froms))
 	}
 
 	rcpts := make([]string, 0)
@@ -168,7 +168,7 @@ func (e *Email) Compile() ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		exportedPart.headers = exportedPart.headers.WithHeader(`to`, tos)
+		exportedPart = exportedPart.WithHeaders(exportedPart.GetHeaders().WithHeader(`to`, tos))
 	}
 	if len(e.cc) > 0 {
 		cc := make([]string, len(e.cc))
@@ -181,7 +181,7 @@ func (e *Email) Compile() ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		exportedPart.headers = exportedPart.headers.WithHeader(`cc`, ccs)
+		exportedPart = exportedPart.WithHeaders(exportedPart.GetHeaders().WithHeader(`cc`, ccs))
 	}
 	if len(e.bcc) > 0 {
 		bcc := make([]string, len(e.bcc))
@@ -194,13 +194,13 @@ func (e *Email) Compile() ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		exportedPart.headers = exportedPart.headers.WithHeader(`bcc`, bccs)
+		exportedPart = exportedPart.WithHeaders(exportedPart.GetHeaders().WithHeader(`bcc`, bccs))
 	}
 	if e.subject != `` {
-		exportedPart.headers = exportedPart.headers.WithHeader(`subject`, e.subject)
+		exportedPart = exportedPart.WithHeaders(exportedPart.GetHeaders().WithHeader(`subject`, e.subject))
 	}
 
-	return exportedPart.compile()
+	return exportedPart.Compile()
 }
 
 func (e *Email) String() string {
@@ -230,7 +230,7 @@ func (e *Email) clone() *Email {
 
 	newEmail := NewEmptyEmail()
 
-	newEmail.headers = e.headers.clone()
+	newEmail.headers = e.headers.Clone()
 
 	newEmail.from = e.from.clone()
 	newEmail.to = e.to.clone()
@@ -240,25 +240,22 @@ func (e *Email) clone() *Email {
 	newEmail.subject = e.subject
 
 	newEmail.mainPart = e.mainPart.clone()
-	newEmail.attachments = e.attachments.clone()
+	newEmail.attachments = part.NewPartsList(e.attachments.ExtractPartsSlice()...)
 
 	return newEmail
 }
 
-func (e *Email) toPart() *part.part {
+func (e *Email) toPart() part.Part {
 	mainPart := e.mainPart.toPart()
 
-	if len(e.attachments) < 1 {
+	if len(e.attachments.ExtractPartsSlice()) < 1 {
 		return mainPart
 	}
 
-	exportedPart := &part.part{
-		headers:  e.headers.clone(),
-		subParts: append([]*part.part{mainPart}, e.attachments...),
-	}
+	exportedPart := part.NewPart().WithHeaders(e.headers).WithSubParts(append([]part.Part{mainPart}, e.attachments.ExtractPartsSlice()...)...)
 
-	if !exportedPart.headers.IsMultipart() {
-		exportedPart.headers = exportedPart.headers.WithHeader(`Content-Type`, part.MultipartMixed)
+	if !exportedPart.GetHeaders().IsMultipart() {
+		exportedPart = exportedPart.WithHeaders(exportedPart.GetHeaders().WithHeader(`Content-Type`, headers.MultipartMixed))
 	}
 
 	return exportedPart

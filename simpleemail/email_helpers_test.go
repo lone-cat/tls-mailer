@@ -52,27 +52,28 @@ func emailsDiffErrors(e1 *Email, e2 *Email) []error {
 	if e1.subject != e2.subject {
 		errors = append(errors, stackerrors.Newf("`subject` does not match: expected `%s`, got `%s`", e1.subject, e2.subject))
 	}
-	if e1.mainPart.alternativeSubPart.textPart.body != e2.mainPart.alternativeSubPart.textPart.body {
-		errors = append(errors, stackerrors.Newf("`text` does not match: expected `%s`, got `%s`", e1.mainPart.alternativeSubPart.textPart.body, e2.mainPart.alternativeSubPart.textPart.body))
+	if e1.mainPart.alternativeSubPart.textPart.GetBody() != e2.mainPart.alternativeSubPart.textPart.GetBody() {
+		errors = append(errors, stackerrors.Newf("`text` does not match: expected `%s`, got `%s`", e1.mainPart.alternativeSubPart.textPart.GetBody(), e2.mainPart.alternativeSubPart.textPart.GetBody()))
 	}
-	if e1.mainPart.alternativeSubPart.htmlPart.body != e2.mainPart.alternativeSubPart.htmlPart.body {
-		errors = append(errors, stackerrors.Newf("`html` does not match: expected `%s`, got `%s`", e1.mainPart.alternativeSubPart.htmlPart.body, e2.mainPart.alternativeSubPart.htmlPart.body))
+	if e1.mainPart.alternativeSubPart.htmlPart.GetBody() != e2.mainPart.alternativeSubPart.htmlPart.GetBody() {
+		errors = append(errors, stackerrors.Newf("`html` does not match: expected `%s`, got `%s`", e1.mainPart.alternativeSubPart.htmlPart.GetBody(), e2.mainPart.alternativeSubPart.htmlPart.GetBody()))
 	}
-	if len(e1.mainPart.embeddedSubParts) != len(e2.mainPart.embeddedSubParts) {
-		errors = append(errors, stackerrors.Newf("`Embedded` count does not match: expected `%d`, got `%d`", len(e1.GetEmbedded()), len(e2.GetEmbedded())))
+	if len(e1.mainPart.embeddedSubParts.ExtractPartsSlice()) != len(e2.mainPart.embeddedSubParts.ExtractPartsSlice()) {
+		errors = append(errors, stackerrors.Newf("`Embedded` count does not match: expected `%d`, got `%d`", len(e1.GetEmbedded().ExtractPartsSlice()), len(e2.GetEmbedded().ExtractPartsSlice())))
 	} else {
-		for ind, e1Embedded := range e1.mainPart.embeddedSubParts {
-			if e1Embedded.body != e2.mainPart.embeddedSubParts[ind].body {
-				errors = append(errors, stackerrors.Newf("`Embedded[%d]` body does not match: expected `%s`, got `%s`", ind, e1Embedded.body, e2.mainPart.embeddedSubParts[ind].body))
+
+		for ind, e1Embedded := range e1.mainPart.embeddedSubParts.ExtractPartsSlice() {
+			if e1Embedded.GetBody() != e2.mainPart.embeddedSubParts.ExtractPartsSlice()[ind].GetBody() {
+				errors = append(errors, stackerrors.Newf("`Embedded[%d]` body does not match: expected `%s`, got `%s`", ind, e1Embedded.GetBody(), e2.mainPart.embeddedSubParts.ExtractPartsSlice()[ind].GetBody()))
 			}
 		}
 	}
-	if len(e1.attachments) != len(e2.attachments) {
-		errors = append(errors, stackerrors.Newf("`Attachments` count does not match: expected `%d`, got `%d`", len(e1.attachments), len(e2.attachments)))
+	if len(e1.attachments.ExtractPartsSlice()) != len(e2.attachments.ExtractPartsSlice()) {
+		errors = append(errors, stackerrors.Newf("`Attachments` count does not match: expected `%d`, got `%d`", len(e1.attachments.ExtractPartsSlice()), len(e2.attachments.ExtractPartsSlice())))
 	} else {
-		for ind, e1Attachment := range e1.attachments {
-			if e1Attachment.body != e2.attachments[ind].body {
-				errors = append(errors, stackerrors.Newf("`Attachments[%d]` body does not match: expected `%s`, got `%s`", ind, e1Attachment.body, e2.attachments[ind].body))
+		for ind, e1Attachment := range e1.attachments.ExtractPartsSlice() {
+			if e1Attachment.GetBody() != e2.attachments.ExtractPartsSlice()[ind].GetBody() {
+				errors = append(errors, stackerrors.Newf("`Attachments[%d]` body does not match: expected `%s`, got `%s`", ind, e1Attachment.GetBody(), e2.attachments.ExtractPartsSlice()[ind].GetBody()))
 			}
 		}
 	}

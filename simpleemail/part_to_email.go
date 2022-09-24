@@ -10,7 +10,7 @@ import (
 	"net/mail"
 )
 
-func convertPartToEmail(sourcePart *part.part) (email *Email, err error) {
+func convertPartToEmail(sourcePart part.Part) (email *Email, err error) {
 	defer func() {
 		err = stackerrors.WrapInDefer(err)
 	}()
@@ -22,7 +22,7 @@ func convertPartToEmail(sourcePart *part.part) (email *Email, err error) {
 		return
 	}
 
-	email.headers, email.from, email.to, email.cc, email.bcc, email.subject, err = proccessHeadersAndExtractPrimaryHeaders(sourcePart.getHeaders())
+	email.headers, email.from, email.to, email.cc, email.bcc, email.subject, err = proccessHeadersAndExtractPrimaryHeaders(sourcePart.GetHeaders())
 	if err != nil {
 		return
 	}
@@ -30,29 +30,29 @@ func convertPartToEmail(sourcePart *part.part) (email *Email, err error) {
 	return
 }
 
-func splitEmailPart(prt *part.part) (relatedPart *relatedSubPart, attachments part.subParts, err error) {
+func splitEmailPart(prt part.Part) (relatedPart *relatedSubPart, attachments part.PartsList, err error) {
 	defer func() {
 		err = stackerrors.WrapInDefer(err)
 	}()
 
 	var contentType string
-	if prt.headers.GetFirstHeaderValue(headers.ContentTypeHeader) != `` || prt.body != `` {
-		contentType, err = prt.headers.GetContentType()
+	if prt.GetHeaders().GetFirstHeaderValue(headers.ContentTypeHeader) != `` || prt.GetBody() != `` {
+		contentType, err = prt.GetHeaders().GetContentType()
 		if err != nil {
 			return
 		}
 	}
 
-	attachments = part.newSubParts()
+	attachments = part.NewPartsList()
 
-	var partToConvert *part.part
-	if contentType == part.MultipartMixed {
-		if len(prt.subParts) < 1 {
+	var partToConvert part.Part
+	if contentType == headers.MultipartMixed {
+		if len(prt.GetSubParts()) < 1 {
 			relatedPart = newRelatedSubPart()
 			return
 		}
-		partToConvert = prt.subParts[0]
-		attachments = prt.subParts[1:].clone()
+		partToConvert = prt.GetSubParts()[0]
+		attachments = part.NewPartsList(prt.GetSubParts()[1:]...)
 	} else {
 		partToConvert = prt
 	}
@@ -65,14 +65,15 @@ func splitEmailPart(prt *part.part) (relatedPart *relatedSubPart, attachments pa
 	return
 }
 
-func convertToRelatedPart(prt *part.part) (relatedPart *relatedSubPart, err error) {
+func convertToRelatedPart(prt part.Part) (relatedPart *relatedSubPart, err error) {
 	defer func() {
 		err = stackerrors.WrapInDefer(err)
 	}()
 
+	prtHeaders := prt.GetHeaders()
 	var contentType string
-	if prt.headers.GetFirstHeaderValue(headers.ContentTypeHeader) != `` || prt.body != `` {
-		contentType, err = prt.headers.GetContentType()
+	if prtHeaders.GetFirstHeaderValue(headers.ContentTypeHeader) != `` || prt.GetBody() != `` {
+		contentType, err = prtHeaders.GetContentType()
 		if err != nil {
 			return
 		}
@@ -80,14 +81,15 @@ func convertToRelatedPart(prt *part.part) (relatedPart *relatedSubPart, err erro
 
 	relatedPart = newRelatedSubPart()
 
-	var partToConvert *part.part
-	if contentType == part.MultipartRelated {
-		if len(prt.subParts) < 1 {
+	var partToConvert part.Part
+	if contentType == headers.MultipartRelated {
+		prtSubParts := prt.GetSubParts()
+		if len(prtSubParts) < 1 {
 			return
 		}
-		partToConvert = prt.subParts[0]
-		relatedPart.embeddedSubParts = prt.subParts[1:].clone()
-		relatedPart.headers = prt.headers
+		partToConvert = prtSubParts[0]
+		relatedPart.embeddedSubParts = part.NewPartsList(prtSubParts[1:]...)
+		relatedPart.headers = prt.GetHeaders()
 	} else {
 		partToConvert = prt
 	}
@@ -102,41 +104,43 @@ func convertToRelatedPart(prt *part.part) (relatedPart *relatedSubPart, err erro
 	return
 }
 
-func convertToAlternativePart(prt *part.part) (alternativePart *alternativeSubPart, err error) {
+func convertToAlternativePart(prt part.Part) (alternativePart *alternativeSubPart, err error) {
 	defer func() {
 		err = stackerrors.WrapInDefer(err)
 	}()
 
+	prtHeaders := prt.GetHeaders()
 	var contentType string
-	if prt.headers.GetFirstHeaderValue(headers.ContentTypeHeader) != `` || prt.body != `` {
-		contentType, err = prt.headers.GetContentType()
+	if prtHeaders.GetFirstHeaderValue(headers.ContentTypeHeader) != `` || prt.GetBody() != `` {
+		contentType, err = prtHeaders.GetContentType()
 		if err != nil {
 			return
 		}
-		if prt.headers.IsMultipart() && contentType != part.MultipartAlternative {
+		if prtHeaders.IsMultipart() && contentType != headers.MultipartAlternative {
 			err = errors.New(fmt.Sprintf(`unexpected multipart type "%s"`, contentType))
 			return
 		}
 	}
 
 	alternativePart = newAlternativeSubPart()
-	dataParts := []*part.part{prt}
-	if contentType == part.MultipartAlternative {
-		if len(prt.subParts) < 1 {
+	dataParts := []part.Part{prt}
+	if contentType == headers.MultipartAlternative {
+		prtSubParts := prt.GetSubParts()
+		if len(prtSubParts) < 1 {
 			return
 		}
-		if len(prt.subParts) > 2 {
+		if len(prtSubParts) > 2 {
 			err = errors.New(`alternative part contains more than two subparts`)
 			return
 		}
-		alternativePart.headers = prt.headers
-		dataParts = prt.subParts
+		alternativePart.headers = prt.GetHeaders()
+		dataParts = prt.GetSubParts()
 	}
 
-	var textPart, htmlPart *part.part
+	var textPart, htmlPart part.Part
 	var found bool
 
-	textPart, found, err = extractOnePartByContentType(part.TextPlain, dataParts...)
+	textPart, found, err = extractOnePartByContentType(headers.TextPlain, dataParts...)
 	if err != nil {
 		return
 	}
@@ -144,7 +148,7 @@ func convertToAlternativePart(prt *part.part) (alternativePart *alternativeSubPa
 		alternativePart.textPart = textPart
 	}
 
-	htmlPart, found, err = extractOnePartByContentType(part.TextHtml, dataParts...)
+	htmlPart, found, err = extractOnePartByContentType(headers.TextHtml, dataParts...)
 	if err != nil {
 		return
 	}
@@ -155,10 +159,10 @@ func convertToAlternativePart(prt *part.part) (alternativePart *alternativeSubPa
 	return
 }
 
-func extractOnePartByContentType(contentType string, prts ...*part.part) (textPart *part.part, found bool, err error) {
+func extractOnePartByContentType(contentType string, prts ...part.Part) (textPart part.Part, found bool, err error) {
 	var subPartContentType string
 	for _, prt := range prts {
-		subPartContentType, err = prt.headers.GetContentType()
+		subPartContentType, err = prt.GetHeaders().GetContentType()
 		if err != nil {
 			err = nil
 			continue
@@ -170,7 +174,7 @@ func extractOnePartByContentType(contentType string, prts ...*part.part) (textPa
 			err = errors.New(`two parts with same content type found`)
 			return
 		}
-		textPart = prt.clone()
+		textPart = prt.Clone()
 		found = true
 	}
 

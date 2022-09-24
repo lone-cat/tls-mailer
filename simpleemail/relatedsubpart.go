@@ -8,41 +8,40 @@ import (
 type relatedSubPart struct {
 	headers            headers.Headers
 	alternativeSubPart *alternativeSubPart
-	embeddedSubParts   part.subParts
+	embeddedSubParts   part.PartsList
 }
 
 func newRelatedSubPart() *relatedSubPart {
 	return &relatedSubPart{
 		headers:            headers.NewHeaders(),
 		alternativeSubPart: newAlternativeSubPart(),
-		embeddedSubParts:   part.newSubParts(),
+		embeddedSubParts:   part.NewPartsList(),
 	}
 }
 
 func (p *relatedSubPart) clone() *relatedSubPart {
 	return &relatedSubPart{
-		headers:            p.headers.clone(),
+		headers:            p.headers.Clone(),
 		alternativeSubPart: p.alternativeSubPart.clone(),
-		embeddedSubParts:   p.embeddedSubParts.clone(),
+		embeddedSubParts:   part.NewPartsList(p.embeddedSubParts.ExtractPartsSlice()...),
 	}
 }
 
 func (p *relatedSubPart) isEmpty() bool {
-	return p.alternativeSubPart.isEmpty() && len(p.embeddedSubParts) < 1
+	return p.alternativeSubPart.isEmpty() && len(p.embeddedSubParts.ExtractPartsSlice()) < 1
 }
 
-func (p *relatedSubPart) toPart() *part.part {
+func (p *relatedSubPart) toPart() part.Part {
 	alternativePart := p.alternativeSubPart.toPart()
-	if len(p.embeddedSubParts) < 1 {
+	if len(p.embeddedSubParts.ExtractPartsSlice()) < 1 {
 		return alternativePart
 	}
 
-	exportedPart := &part.part{
-		headers:  p.headers.clone(),
-		subParts: append([]*part.part{alternativePart}, p.embeddedSubParts...),
-	}
-	if !exportedPart.headers.IsMultipart() {
-		exportedPart.headers = exportedPart.headers.WithHeader(`Content-Type`, part.MultipartRelated)
+	exportedPart := part.NewPart().WithHeaders(p.headers).WithSubParts(append([]part.Part{alternativePart}, p.embeddedSubParts.ExtractPartsSlice()...)...)
+	if !exportedPart.GetHeaders().IsMultipart() {
+		exportedPart = exportedPart.WithHeaders(
+			exportedPart.GetHeaders().WithHeader(`Content-Type`, headers.MultipartRelated),
+		)
 	}
 
 	return exportedPart

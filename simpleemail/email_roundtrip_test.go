@@ -1,7 +1,6 @@
 package simpleemail
 
 import (
-	"github.com/lone-cat/tls-mailer/simpleemail/test"
 	"net/mail"
 	"testing"
 )
@@ -40,7 +39,7 @@ func convertAddressSliceToMapByEmail(addressSlice []*mail.Address) map[string]*m
 }
 
 func TestRoundTrip(t *testing.T) {
-	for _, em := range test.emailsForTest {
+	for _, em := range emailsForTest {
 		testCompare(em, t)
 	}
 }

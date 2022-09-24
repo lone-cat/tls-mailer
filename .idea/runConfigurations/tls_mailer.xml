@@ -2,6 +2,7 @@
   <configuration default="false" name="tls-mailer" type="GoTestRunConfiguration" factoryName="Go Test">
     <module name="tls-mailer" />
     <working_directory value="$PROJECT_DIR$" />
+    <parameters value="-count=1" />
     <envs>
       <env name="CGO_ENABLED" value="0" />
     </envs>

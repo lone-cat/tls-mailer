@@ -7,6 +7,6 @@ import (
 )
 
 func TestMy(t *testing.T) {
-	email := simpleemail.NewEmptyEmail()
+	email := simpleemail.NewEmptyEmail().WithText(`aaa`)
 	fmt.Println(email)
 }

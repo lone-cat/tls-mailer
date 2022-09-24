@@ -76,7 +76,7 @@ func (p *alternativeSubPart) toPart() part.Part {
 		)
 	}
 
-	exportedPart = exportedPart.WithSubParts([]part.Part{p.textPart, p.htmlPart})
+	exportedPart = exportedPart.WithSubParts(p.textPart, p.htmlPart)
 
 	return exportedPart
 }
