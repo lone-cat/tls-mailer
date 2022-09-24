@@ -8,8 +8,10 @@ import (
 type Part interface {
 	GetHeaders() headers.Headers
 	WithHeaders(headers headers.Headers) Part
-	GetBody() string
-	WithBody(body string) Part
+	GetBodyLen() int
+	GetBody() []byte
+	WithBody(body []byte) Part
+	WithBodyFromString(body string) Part
 	GetSubParts() []Part
 	WithSubParts(subParts ...Part) Part
 	Compile() ([]byte, error)

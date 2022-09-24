@@ -17,7 +17,7 @@ var base64LineSeparator = []byte("\r\n")
 
 var Decoder = &mime.WordDecoder{}
 
-func ToBase64(val string) (result string, err error) {
+func StringToBase64(val string) (result string, err error) {
 	builder := &strings.Builder{}
 	lineSplitter := NewSplitter(builder, base64LineSeparator, mimeLineLength)
 	encoder := base64.NewEncoder(base64.StdEncoding, lineSplitter)
@@ -38,6 +38,27 @@ func ToBase64(val string) (result string, err error) {
 	return builder.String(), nil
 }
 
+func BytesToBase64(b []byte) (res []byte, err error) {
+	buffer := &bytes.Buffer{}
+	lineSplitter := NewSplitter(buffer, base64LineSeparator, mimeLineLength)
+	encoder := base64.NewEncoder(base64.StdEncoding, lineSplitter)
+
+	ln, err := encoder.Write(b)
+	if err != nil {
+		return
+	}
+	if ln < len(b) {
+		err = errors.New(`written less bytes`)
+		return
+	}
+	err = encoder.Close()
+	if err != nil {
+		return
+	}
+	res = buffer.Bytes()
+	return
+}
+
 func FromBase64(val string) (string, error) {
 	bytess, err := base64.StdEncoding.DecodeString(val)
 	if err != nil {
@@ -47,7 +68,7 @@ func FromBase64(val string) (string, error) {
 	return string(bytess), nil
 }
 
-func ToQuotedPrintable(s string) (string, error) {
+func StringToQuotedPrintable(s string) (string, error) {
 	var ac bytes.Buffer
 	w := quotedprintable.NewWriter(&ac)
 	_, err := w.Write([]byte(s))
@@ -59,6 +80,21 @@ func ToQuotedPrintable(s string) (string, error) {
 		return ``, err
 	}
 	return ac.String(), nil
+}
+
+func BytesToQuotedPrintable(b []byte) (res []byte, err error) {
+	var ac bytes.Buffer
+	w := quotedprintable.NewWriter(&ac)
+	_, err = w.Write(b)
+	if err != nil {
+		return
+	}
+	err = w.Close()
+	if err != nil {
+		return
+	}
+	res = ac.Bytes()
+	return
 }
 
 func FromQuotedPrintable(s string) (string, error) {

@@ -7,10 +7,10 @@
       <env name="CGO_ENABLED" value="0" />
     </envs>
     <kind value="DIRECTORY" />
+    <package value="github.com/lone-cat/tls-mailer" />
     <directory value="$PROJECT_DIR$" />
     <filePath value="$PROJECT_DIR$/main_test.go" />
     <framework value="gotest" />
-    <pattern value="./simplemail/headers/..." />
     <method v="2" />
   </configuration>
 </component>

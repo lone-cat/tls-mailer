@@ -2,6 +2,7 @@ package part
 
 import (
 	"fmt"
+	"github.com/lone-cat/tls-mailer/common"
 	"github.com/lone-cat/tls-mailer/simpleemail/headers"
 	"io"
 	"net/http"
@@ -11,7 +12,7 @@ import (
 
 type part struct {
 	headers  headers.Headers
-	body     string
+	body     []byte
 	subParts PartsList
 }
 
@@ -23,11 +24,34 @@ func NewPart() Part {
 }
 
 func NewPartFromString(data string) (createdPart Part) {
+	return NewPart().WithBodyFromString(data)
+}
+
+func NewPartFromBytes(data []byte) (createdPart Part) {
 	return NewPart().WithBody(data)
 }
 
-func NewEmbeddedPartFromString(cid, data string) (embeddedPart Part) {
+func NewEmbeddedPartFromString(cid string, data string) (embeddedPart Part) {
 	embeddedPart = NewPartFromString(data)
+	hdrs := embeddedPart.GetHeaders().
+		WithHeader(
+			headers.ContentDispositionHeader,
+			`inline`,
+		)
+	if cid != `` {
+		hdrs = hdrs.WithHeader(
+			headers.ContentIdHeader,
+			fmt.Sprintf(`<%s>`, cid),
+		)
+	}
+
+	embeddedPart = embeddedPart.WithHeaders(hdrs)
+
+	return
+}
+
+func NewEmbeddedPartFromBytes(cid string, data []byte) (embeddedPart Part) {
+	embeddedPart = NewPartFromBytes(data)
 	hdrs := embeddedPart.GetHeaders().
 		WithHeader(
 			headers.ContentDispositionHeader,
@@ -51,7 +75,7 @@ func NewEmbeddedPartFromFile(cid, filename string) (embedded Part, err error) {
 		return
 	}
 
-	embedded = NewEmbeddedPartFromString(cid, string(data))
+	embedded = NewEmbeddedPartFromBytes(cid, data)
 	hdrs := embedded.GetHeaders().
 		WithHeader(
 			headers.ContentDispositionHeader,
@@ -76,13 +100,26 @@ func NewAttachedPartFromString(data string) (attachment Part) {
 	return
 }
 
+func NewAttachedPartFromBytes(data []byte) (attachment Part) {
+	attachment = NewPartFromBytes(data)
+	hdrs := attachment.GetHeaders().
+		WithHeader(
+			headers.ContentDispositionHeader,
+			`attachment`,
+		)
+
+	attachment = attachment.WithHeaders(hdrs)
+
+	return
+}
+
 func NewAttachedPartFromFile(filename string) (attachment Part, err error) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		return
 	}
 
-	attachment = NewAttachedPartFromString(string(data))
+	attachment = NewAttachedPartFromBytes(data)
 	hdrs := attachment.GetHeaders().
 		WithHeader(
 			headers.ContentDispositionHeader, fmt.Sprintf(`attachment; filename="%s"`, filepath.Base(filename)),
@@ -113,23 +150,31 @@ func (p *part) WithHeaders(headers headers.Headers) Part {
 	}
 }
 
-func (p *part) GetBody() string {
-	return p.body
+func (p *part) GetBodyLen() int {
+	return len(p.body)
 }
 
-func (p *part) WithBody(body string) (exportPart Part) {
+func (p *part) GetBody() []byte {
+	return common.CloneSlice(p.body)
+}
+
+func (p *part) WithBody(body []byte) Part {
 	var exportHeaders headers.Headers
-	if body == `` {
+	if len(body) < 1 {
 		exportHeaders = p.headers.WithoutHeader(headers.ContentTypeHeader)
 	} else {
-		exportHeaders = p.headers.WithHeader(headers.ContentTypeHeader, http.DetectContentType([]byte(body)))
+		exportHeaders = p.headers.WithHeader(headers.ContentTypeHeader, http.DetectContentType(body))
 	}
 
 	return &part{
 		headers:  exportHeaders,
-		body:     body,
+		body:     common.CloneSlice(body),
 		subParts: p.subParts,
 	}
+}
+
+func (p *part) WithBodyFromString(body string) Part {
+	return p.WithBody([]byte(body))
 }
 
 func (p *part) GetSubParts() []Part {

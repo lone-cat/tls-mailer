@@ -2,6 +2,7 @@ package simpleemail
 
 import (
 	"errors"
+	"github.com/lone-cat/tls-mailer/simpleemail/addresses"
 	"github.com/lone-cat/tls-mailer/simpleemail/headers"
 	"github.com/lone-cat/tls-mailer/simpleemail/part"
 	"net/mail"
@@ -11,10 +12,10 @@ import (
 type Email struct {
 	headers headers.Headers
 
-	from addresses
-	to   addresses
-	cc   addresses
-	bcc  addresses
+	from addresses.AddressList
+	to   addresses.AddressList
+	cc   addresses.AddressList
+	bcc  addresses.AddressList
 
 	subject string
 
@@ -27,10 +28,10 @@ func NewEmptyEmail() *Email {
 	return &Email{
 		headers: headers.NewHeaders(),
 
-		from: newAddresses(),
-		to:   newAddresses(),
-		cc:   newAddresses(),
-		bcc:  newAddresses(),
+		from: addresses.NewAddressList(),
+		to:   addresses.NewAddressList(),
+		cc:   addresses.NewAddressList(),
+		bcc:  addresses.NewAddressList(),
 
 		mainPart: newRelatedSubPart(),
 
@@ -38,20 +39,36 @@ func NewEmptyEmail() *Email {
 	}
 }
 
-func (e *Email) GetFrom() []*mail.Address {
-	return e.from.clone()
+func (e *Email) GetFromAddressList() addresses.AddressList {
+	return e.from
 }
 
-func (e *Email) GetTo() []*mail.Address {
-	return e.to.clone()
+func (e *Email) GetFromAddressSlice() []*mail.Address {
+	return e.from.ExportAddressSlice()
 }
 
-func (e *Email) GetCc() []*mail.Address {
-	return e.cc.clone()
+func (e *Email) GetToAddressList() addresses.AddressList {
+	return e.to
 }
 
-func (e *Email) GetBcc() []*mail.Address {
-	return e.bcc.clone()
+func (e *Email) GetToAddressSlice() []*mail.Address {
+	return e.to.ExportAddressSlice()
+}
+
+func (e *Email) GetCcAddressList() addresses.AddressList {
+	return e.cc
+}
+
+func (e *Email) GetCcAddressSlice() []*mail.Address {
+	return e.cc.ExportAddressSlice()
+}
+
+func (e *Email) GetBccAddressList() addresses.AddressList {
+	return e.bcc
+}
+
+func (e *Email) GetBccAddressSlice() []*mail.Address {
+	return e.bcc.ExportAddressSlice()
 }
 
 func (e *Email) GetSubject() string {

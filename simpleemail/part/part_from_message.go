@@ -1,6 +1,7 @@
 package part
 
 import (
+	"bytes"
 	"encoding/base64"
 	"errors"
 	"github.com/lone-cat/stackerrors"
@@ -48,7 +49,7 @@ func convertSimpleMsgToPart(msg *mail.Message) (exportedPartAsInterface Part, er
 		return
 	}
 
-	exportedPart.body = string(msgBodyBytes)
+	exportedPart.body = msgBodyBytes
 
 	exportedPartAsInterface, err = unpackBody(exportedPart)
 
@@ -111,18 +112,18 @@ func unpackBody(prt Part) (unpacked Part, err error) {
 	if encoding == headers.EncodingQuotedPrintable || encoding == headers.EncodingBase64 {
 		var decodedBodyBytes []byte
 		if encoding == headers.EncodingQuotedPrintable {
-			decodedBodyBytes, err = io.ReadAll(quotedprintable.NewReader(strings.NewReader(unpacked.GetBody())))
+			decodedBodyBytes, err = io.ReadAll(quotedprintable.NewReader(bytes.NewReader(unpacked.GetBody())))
 			if err != nil {
 				return
 			}
 		}
 		if encoding == headers.EncodingBase64 {
-			decodedBodyBytes, err = io.ReadAll(base64.NewDecoder(base64.StdEncoding, strings.NewReader(unpacked.GetBody())))
+			decodedBodyBytes, err = io.ReadAll(base64.NewDecoder(base64.StdEncoding, bytes.NewReader(unpacked.GetBody())))
 			if err != nil {
 				return
 			}
 		}
-		unpacked = unpacked.WithBody(string(decodedBodyBytes))
+		unpacked = unpacked.WithBody(decodedBodyBytes)
 		unpacked = unpacked.WithHeaders(
 			unpacked.GetHeaders().WithoutHeader(headers.ContentTransferEncodingHeader),
 		)

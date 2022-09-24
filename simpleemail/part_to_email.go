@@ -36,7 +36,7 @@ func splitEmailPart(prt part.Part) (relatedPart *relatedSubPart, attachments par
 	}()
 
 	var contentType string
-	if prt.GetHeaders().GetFirstHeaderValue(headers.ContentTypeHeader) != `` || prt.GetBody() != `` {
+	if prt.GetHeaders().GetFirstHeaderValue(headers.ContentTypeHeader) != `` || prt.GetBodyLen() > 0 {
 		contentType, err = prt.GetHeaders().GetContentType()
 		if err != nil {
 			return
@@ -72,7 +72,7 @@ func convertToRelatedPart(prt part.Part) (relatedPart *relatedSubPart, err error
 
 	prtHeaders := prt.GetHeaders()
 	var contentType string
-	if prtHeaders.GetFirstHeaderValue(headers.ContentTypeHeader) != `` || prt.GetBody() != `` {
+	if prtHeaders.GetFirstHeaderValue(headers.ContentTypeHeader) != `` || prt.GetBodyLen() > 0 {
 		contentType, err = prtHeaders.GetContentType()
 		if err != nil {
 			return
@@ -111,7 +111,7 @@ func convertToAlternativePart(prt part.Part) (alternativePart *alternativeSubPar
 
 	prtHeaders := prt.GetHeaders()
 	var contentType string
-	if prtHeaders.GetFirstHeaderValue(headers.ContentTypeHeader) != `` || prt.GetBody() != `` {
+	if prtHeaders.GetFirstHeaderValue(headers.ContentTypeHeader) != `` || prt.GetBodyLen() > 0 {
 		contentType, err = prtHeaders.GetContentType()
 		if err != nil {
 			return

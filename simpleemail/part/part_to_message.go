@@ -1,6 +1,7 @@
 package part
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"github.com/lone-cat/tls-mailer/simpleemail/encode"
@@ -18,9 +19,9 @@ func (p *part) ToPlainMessage() (msg *mail.Message, err error) {
 	clonedHeaders := p.GetHeaders()
 	if len(p.subParts.ExtractPartsSlice()) < 1 {
 
-		var encodedBody string
+		var encodedBody []byte
 
-		if p.GetBody() != `` {
+		if p.GetBodyLen() > 0 {
 			clonedHeaders = clonedHeaders.WithHeader(headers.ContentTypeHeader, http.DetectContentType([]byte(p.GetBody())))
 
 			var contentType string
@@ -30,14 +31,14 @@ func (p *part) ToPlainMessage() (msg *mail.Message, err error) {
 			}
 			if strings.HasPrefix(contentType, `text/`) {
 				//encodedBody = mime.QEncoding.Encode(`utf-8`, p.GetBody())
-				encodedBody, err = encode.ToQuotedPrintable(p.GetBody())
+				encodedBody, err = encode.BytesToQuotedPrintable(p.GetBody())
 				if err != nil {
 					return
 				}
 				clonedHeaders = clonedHeaders.WithHeader(headers.ContentTransferEncodingHeader, headers.EncodingQuotedPrintable.String())
 			} else {
 				//encodedBody = mime.BEncoding.Encode(`utf-8`, p.GetBody())
-				encodedBody, err = encode.ToBase64(p.GetBody())
+				encodedBody, err = encode.BytesToBase64(p.GetBody())
 				if err != nil {
 					return nil, err
 				}
@@ -47,7 +48,7 @@ func (p *part) ToPlainMessage() (msg *mail.Message, err error) {
 
 		return &mail.Message{
 			Header: clonedHeaders.ExtractHeadersMap(),
-			Body:   strings.NewReader(encodedBody),
+			Body:   bytes.NewReader(encodedBody),
 		}, nil
 	}
 

@@ -10,22 +10,22 @@ func TestPartCloneImmutable(t *testing.T) {
 	h := headers.NewHeaders().WithAddedHeader(`to`, `s`).WithAddedHeader(`from`, `d`)
 	p := NewPart().
 		WithHeaders(h).
-		WithBody(text).
+		WithBodyFromString(text).
 		WithSubParts([]Part{nil}...).(*part)
 
 	p2 := p.Clone().(*part)
 
-	p.body = `ss`
+	p.body = []byte(`ss`)
 
 	p.headers = p.headers.WithHeader(`to`, `ss`)
 
-	p.subParts = NewPartsList(append(p2.subParts.ExtractPartsSlice(), &part{headers: h, body: text, subParts: NewPartsList()})...)
+	p.subParts = NewPartsList(append(p2.subParts.ExtractPartsSlice(), &part{headers: h, body: []byte(text), subParts: NewPartsList()})...)
 
 	if reflect.DeepEqual(p.headers, p2.headers) {
 		t.Errorf(`part.clone() func immutability failure: headers equal`)
 	}
 
-	if p.body == p2.body {
+	if reflect.DeepEqual(p.body, p2.body) {
 		t.Errorf(`part.clone() func immutability failure: bodies equal`)
 	}
 

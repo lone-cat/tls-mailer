@@ -8,7 +8,7 @@ import (
 
 func TestNewPart(t *testing.T) {
 	p := NewPart().(*part)
-	if p.body != `` {
+	if len(p.body) > 0 {
 		t.Errorf(`newPart() failure: body is not empty`)
 	}
 	if len(p.headers.ExtractHeadersMap()) != 0 {
@@ -20,17 +20,17 @@ func TestNewPartFromString(t *testing.T) {
 	expected := `a`
 	p := NewPartFromString(expected)
 	actual := p.GetBody()
-	if actual != expected {
+	if string(actual) != expected {
 		t.Errorf(`newPartFromString() failure: body expected "%s", got "%s"`, expected, actual)
 	}
 }
 
 func TestPartClone(t *testing.T) {
 	h := headers.NewHeaders().WithAddedHeader(`to`, `s`).WithAddedHeader(`from`, `d`)
-	sp := NewPartsList(&part{headers: h.Clone(), body: text, subParts: NewPartsList()})
+	sp := NewPartsList(&part{headers: h.Clone(), body: []byte(text), subParts: NewPartsList()})
 	p := NewPart().
 		WithHeaders(h).
-		WithBody(text).
+		WithBodyFromString(text).
 		WithSubParts(sp.ExtractPartsSlice()...)
 
 	p2 := p.Clone()
@@ -41,7 +41,7 @@ func TestPartClone(t *testing.T) {
 	if !reflect.DeepEqual(p.(*part).headers, p2.(*part).headers) {
 		t.Errorf(`part.clone() failure: header maps differ`)
 	}
-	if p.(*part).body != p2.(*part).body {
+	if !reflect.DeepEqual(p.(*part).body, p2.(*part).body) {
 		t.Errorf(`part.clone() failure: bodies differ`)
 	}
 	if !reflect.DeepEqual(p.(*part).subParts, p2.(*part).subParts) {
@@ -68,22 +68,22 @@ func TestPartWithHeaders(t *testing.T) {
 
 func TestPartGetBody(t *testing.T) {
 	p := NewPart()
-	p.(*part).body = text
-	if p.GetBody() != text {
+	p.(*part).body = []byte(text)
+	if string(p.GetBody()) != text {
 		t.Errorf(`part.GetBody() failure: body differ`)
 	}
 }
 
 func TestPartWithBody(t *testing.T) {
-	p := NewPart().WithBody(text)
-	if p.(*part).body != text {
+	p := NewPart().WithBodyFromString(text)
+	if string(p.(*part).body) != text {
 		t.Errorf(`part.withBody() failure: body differ`)
 	}
 }
 
 func TestPartGetSubparts(t *testing.T) {
 	h := headers.NewHeaders().WithAddedHeader(`to`, `s`).WithAddedHeader(`from`, `d`)
-	subP := NewPartsList(&part{headers: h.Clone(), body: text, subParts: NewPartsList()})
+	subP := NewPartsList(&part{headers: h.Clone(), body: []byte(text), subParts: NewPartsList()})
 	p := NewPart()
 	p.(*part).subParts = subP
 	gotSubParts := p.GetSubParts()
@@ -94,7 +94,7 @@ func TestPartGetSubparts(t *testing.T) {
 
 func TestPartWithSubparts(t *testing.T) {
 	h := headers.NewHeaders().WithAddedHeader(`to`, `s`).WithAddedHeader(`from`, `d`)
-	subP := NewPartsList(&part{headers: h.Clone(), body: text, subParts: NewPartsList()})
+	subP := NewPartsList(&part{headers: h.Clone(), body: []byte(text), subParts: NewPartsList()})
 	p := NewPart().WithSubParts(subP.ExtractPartsSlice()...)
 	if !reflect.DeepEqual(p.(*part).subParts, subP) {
 		t.Errorf(`part.withSubParts() failure: subparts differ`)
