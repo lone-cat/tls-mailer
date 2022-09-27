@@ -22,7 +22,17 @@ func convertPartToEmail(sourcePart part.Part) (email *Email, err error) {
 		return
 	}
 
-	email.headers, email.from, email.to, email.cc, email.bcc, email.subject, err = proccessHeadersAndExtractPrimaryHeaders(sourcePart.GetHeaders())
+	eHeaders, eFrom, eTo, eCc, eBcc, eSubject, err := proccessHeadersAndExtractPrimaryHeaders(sourcePart.GetHeaders())
+
+	email.headers = eHeaders
+
+	email.from = email.from.WithMailAddressSlice(eFrom...)
+	email.to = email.to.WithMailAddressSlice(eTo...)
+	email.cc = email.cc.WithMailAddressSlice(eCc...)
+	email.bcc = email.bcc.WithMailAddressSlice(eBcc...)
+
+	email.subject = []byte(eSubject)
+
 	if err != nil {
 		return
 	}

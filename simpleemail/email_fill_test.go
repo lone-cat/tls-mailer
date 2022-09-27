@@ -2,6 +2,7 @@ package simpleemail
 
 import (
 	"os"
+	"reflect"
 	"testing"
 )
 
@@ -84,7 +85,7 @@ func TestFill(t *testing.T) {
 		t.Fatal(err)
 	}
 	embeddedPartsSlice := email.GetEmbedded().ExtractPartsSlice()
-	if embeddedPartsSlice[0].GetBody() != string(dataBytes) {
+	if !reflect.DeepEqual(embeddedPartsSlice[0].GetBody(), dataBytes) {
 		t.Errorf(`"Embedded body" filled incorrectly. expected %#v, got %#v`, string(dataBytes), embeddedPartsSlice[0].GetBody())
 	}
 	dataBytes, err = os.ReadFile(attached)
@@ -92,7 +93,7 @@ func TestFill(t *testing.T) {
 		t.Fatal(err)
 	}
 	attachmentsPartsSlice := email.GetAttachments().ExtractPartsSlice()
-	if attachmentsPartsSlice[0].GetBody() != string(dataBytes) {
+	if !reflect.DeepEqual(attachmentsPartsSlice[0].GetBody(), dataBytes) {
 		t.Errorf(`"Attached body" filled incorrectly. expected %#v, got %#v`, string(dataBytes), attachmentsPartsSlice[0].GetBody())
 	}
 }

@@ -19,21 +19,51 @@ func newRelatedSubPart() *relatedSubPart {
 	}
 }
 
+func (p *relatedSubPart) WithText(text []byte) *relatedSubPart {
+	newRelSubPart := p.clone()
+	newRelSubPart.alternativeSubPart = newRelSubPart.alternativeSubPart.withText(text)
+	return newRelSubPart
+}
+
+func (p *relatedSubPart) WithHtml(html []byte) *relatedSubPart {
+	newRelSubPart := p.clone()
+	newRelSubPart.alternativeSubPart = newRelSubPart.alternativeSubPart.withHtml(html)
+	return newRelSubPart
+}
+
+func (p *relatedSubPart) WithAlternativeSubPart(altSubPart *alternativeSubPart) *relatedSubPart {
+	newRelSubPart := p.clone()
+	newRelSubPart.alternativeSubPart = altSubPart
+	return newRelSubPart
+}
+
+func (p *relatedSubPart) WithEmbeddedSubPart(part part.Part) *relatedSubPart {
+	newRelSubPart := p.clone()
+	newRelSubPart.embeddedSubParts = newRelSubPart.embeddedSubParts.WithAppended(part)
+	return newRelSubPart
+}
+
+func (p *relatedSubPart) WithoutEmbeddedSubParts() *relatedSubPart {
+	newRelSubPart := p.clone()
+	newRelSubPart.embeddedSubParts = part.NewPartsList()
+	return newRelSubPart
+}
+
 func (p *relatedSubPart) clone() *relatedSubPart {
 	return &relatedSubPart{
-		headers:            p.headers.Clone(),
-		alternativeSubPart: p.alternativeSubPart.clone(),
-		embeddedSubParts:   part.NewPartsList(p.embeddedSubParts.ExtractPartsSlice()...),
+		headers:            p.headers,
+		alternativeSubPart: p.alternativeSubPart,
+		embeddedSubParts:   p.embeddedSubParts,
 	}
 }
 
 func (p *relatedSubPart) isEmpty() bool {
-	return p.alternativeSubPart.isEmpty() && len(p.embeddedSubParts.ExtractPartsSlice()) < 1
+	return p.alternativeSubPart.isEmpty() && p.embeddedSubParts.IsEmpty()
 }
 
 func (p *relatedSubPart) toPart() part.Part {
 	alternativePart := p.alternativeSubPart.toPart()
-	if len(p.embeddedSubParts.ExtractPartsSlice()) < 1 {
+	if p.embeddedSubParts.IsEmpty() {
 		return alternativePart
 	}
 

@@ -19,36 +19,36 @@ func newAlternativeSubPart() *alternativeSubPart {
 	}
 }
 
-func (p *alternativeSubPart) clone() *alternativeSubPart {
-	return &alternativeSubPart{
-		headers:  p.headers,
-		textPart: p.textPart,
-		htmlPart: p.htmlPart,
-	}
-}
-
-func (p *alternativeSubPart) withText(text string) *alternativeSubPart {
+func (p *alternativeSubPart) withText(text []byte) *alternativeSubPart {
 	clonedPart := p.clone()
 	clonedPart.textPart = clonedPart.textPart.WithBody(text)
 	return clonedPart
 }
 
-func (p *alternativeSubPart) withHtml(html string) *alternativeSubPart {
+func (p *alternativeSubPart) withHtml(html []byte) *alternativeSubPart {
 	clonedPart := p.clone()
 	clonedPart.htmlPart = clonedPart.htmlPart.WithBody(html)
 	return clonedPart
 }
 
 func (p *alternativeSubPart) isTextEmpty() bool {
-	return p.textPart.GetBody() == ``
+	return len(p.textPart.GetBody()) < 1
 }
 
 func (p *alternativeSubPart) isHtmlEmpty() bool {
-	return p.htmlPart.GetBody() == ``
+	return len(p.htmlPart.GetBody()) < 1
 }
 
 func (p *alternativeSubPart) isEmpty() bool {
 	return p.isTextEmpty() && p.isHtmlEmpty()
+}
+
+func (p *alternativeSubPart) clone() *alternativeSubPart {
+	return &alternativeSubPart{
+		headers:  p.headers,
+		textPart: p.textPart,
+		htmlPart: p.htmlPart,
+	}
 }
 
 func (p *alternativeSubPart) toPart() part.Part {

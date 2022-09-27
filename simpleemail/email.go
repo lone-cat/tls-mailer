@@ -2,7 +2,7 @@ package simpleemail
 
 import (
 	"errors"
-	"github.com/lone-cat/tls-mailer/simpleemail/addresses"
+	"github.com/lone-cat/tls-mailer/simpleemail/address"
 	"github.com/lone-cat/tls-mailer/simpleemail/headers"
 	"github.com/lone-cat/tls-mailer/simpleemail/part"
 	"net/mail"
@@ -12,12 +12,12 @@ import (
 type Email struct {
 	headers headers.Headers
 
-	from addresses.AddressList
-	to   addresses.AddressList
-	cc   addresses.AddressList
-	bcc  addresses.AddressList
+	from address.AddressList
+	to   address.AddressList
+	cc   address.AddressList
+	bcc  address.AddressList
 
-	subject string
+	subject []byte
 
 	mainPart *relatedSubPart
 
@@ -28,10 +28,12 @@ func NewEmptyEmail() *Email {
 	return &Email{
 		headers: headers.NewHeaders(),
 
-		from: addresses.NewAddressList(),
-		to:   addresses.NewAddressList(),
-		cc:   addresses.NewAddressList(),
-		bcc:  addresses.NewAddressList(),
+		from: address.NewAddressList(),
+		to:   address.NewAddressList(),
+		cc:   address.NewAddressList(),
+		bcc:  address.NewAddressList(),
+
+		subject: make([]byte, 0),
 
 		mainPart: newRelatedSubPart(),
 
@@ -39,89 +41,73 @@ func NewEmptyEmail() *Email {
 	}
 }
 
-func (e *Email) GetFromAddressList() addresses.AddressList {
-	return e.from
+func (e *Email) GetFrom() []*mail.Address {
+	return e.from.ExportMailAddressSlice()
 }
 
-func (e *Email) GetFromAddressSlice() []*mail.Address {
-	return e.from.ExportAddressSlice()
+func (e *Email) GetTo() []*mail.Address {
+	return e.to.ExportMailAddressSlice()
 }
 
-func (e *Email) GetToAddressList() addresses.AddressList {
-	return e.to
+func (e *Email) GetCc() []*mail.Address {
+	return e.cc.ExportMailAddressSlice()
 }
 
-func (e *Email) GetToAddressSlice() []*mail.Address {
-	return e.to.ExportAddressSlice()
-}
-
-func (e *Email) GetCcAddressList() addresses.AddressList {
-	return e.cc
-}
-
-func (e *Email) GetCcAddressSlice() []*mail.Address {
-	return e.cc.ExportAddressSlice()
-}
-
-func (e *Email) GetBccAddressList() addresses.AddressList {
-	return e.bcc
-}
-
-func (e *Email) GetBccAddressSlice() []*mail.Address {
-	return e.bcc.ExportAddressSlice()
+func (e *Email) GetBcc() []*mail.Address {
+	return e.bcc.ExportMailAddressSlice()
 }
 
 func (e *Email) GetSubject() string {
-	return e.subject
+	return string(e.subject)
 }
 
 func (e *Email) GetText() string {
-	return e.mainPart.alternativeSubPart.textPart.GetBody()
+	return string(e.mainPart.alternativeSubPart.textPart.GetBody())
 }
 
 func (e *Email) GetHtml() string {
-	return e.mainPart.alternativeSubPart.htmlPart.GetBody()
+	return string(e.mainPart.alternativeSubPart.htmlPart.GetBody())
 }
 
 func (e *Email) WithFrom(from []*mail.Address) *Email {
 	newEmail := e.clone()
-	newEmail.from = from
+	newEmail.from = newEmail.from.WithMailAddressSlice(from...)
 	return newEmail
 }
 
 func (e *Email) WithTo(to []*mail.Address) *Email {
 	newEmail := e.clone()
-	newEmail.to = to
+	newEmail.to = newEmail.to.WithMailAddressSlice(to...)
 	return newEmail
 }
 
 func (e *Email) WithCc(cc []*mail.Address) *Email {
 	newEmail := e.clone()
-	newEmail.cc = cc
+	newEmail.cc = newEmail.cc.WithMailAddressSlice(cc...)
 	return newEmail
 }
 
 func (e *Email) WithBcc(bcc []*mail.Address) *Email {
 	newEmail := e.clone()
-	newEmail.bcc = bcc
+	newEmail.bcc = newEmail.bcc.WithMailAddressSlice(bcc...)
 	return newEmail
 }
 
 func (e *Email) WithSubject(subject string) *Email {
 	newEmail := e.clone()
-	newEmail.subject = subject
+	newEmail.subject = []byte(subject)
 	return newEmail
 }
 
 func (e *Email) WithText(text string) *Email {
 	newEmail := e.clone()
-	newEmail.mainPart.alternativeSubPart = newEmail.mainPart.alternativeSubPart.withText(text)
+	newEmail.mainPart = newEmail.mainPart.WithText([]byte(text))
 	return newEmail
 }
 
 func (e *Email) WithHtml(html string) *Email {
 	newEmail := e.clone()
-	newEmail.mainPart.alternativeSubPart = newEmail.mainPart.alternativeSubPart.withHtml(html)
+	newEmail.mainPart = newEmail.mainPart.WithHtml([]byte(html))
 	return newEmail
 }
 
@@ -130,14 +116,24 @@ func (e *Email) WithEmbeddedFile(cid string, filename string) (*Email, error) {
 	if err != nil {
 		return e, err
 	}
-	newEmail := e.clone()
-	newEmail.mainPart.embeddedSubParts = newEmail.mainPart.embeddedSubParts.WithAppended(embedded)
+	newEmail := e.withEmbedded(embedded)
 	return newEmail, nil
 }
 
-func (e *Email) WithoutEmbeddedFiles() *Email {
+func (e *Email) WithEmbeddedBytes(cid string, bts []byte) *Email {
+	embedded := part.NewEmbeddedPartFromBytes(cid, bts)
+	return e.withEmbedded(embedded)
+}
+
+func (e *Email) withEmbedded(embedded part.Part) *Email {
 	newEmail := e.clone()
-	newEmail.mainPart.embeddedSubParts = part.NewPartsList()
+	newEmail.mainPart = newEmail.mainPart.WithEmbeddedSubPart(embedded)
+	return newEmail
+}
+
+func (e *Email) WithoutEmbedded() *Email {
+	newEmail := e.clone()
+	newEmail.mainPart = newEmail.mainPart.WithoutEmbeddedSubParts()
 	return newEmail
 }
 
@@ -146,12 +142,22 @@ func (e *Email) WithAttachedFile(filename string) (*Email, error) {
 	if err != nil {
 		return e, err
 	}
-	newEmail := e.clone()
-	newEmail.attachments = newEmail.attachments.WithAppended(attachment)
+	newEmail := e.withAttached(attachment)
 	return newEmail, nil
 }
 
-func (e *Email) WithoutAttachedFiles() *Email {
+func (e *Email) WithAttachedBytes(bts []byte) *Email {
+	attachment := part.NewAttachedPartFromBytes(bts)
+	return e.withAttached(attachment)
+}
+
+func (e *Email) withAttached(attachment part.Part) *Email {
+	newEmail := e.clone()
+	newEmail.attachments = newEmail.attachments.WithAppended(attachment)
+	return newEmail
+}
+
+func (e *Email) WithoutAttachments() *Email {
 	newEmail := e.clone()
 	newEmail.attachments = part.NewPartsList()
 	return newEmail
@@ -160,9 +166,10 @@ func (e *Email) WithoutAttachedFiles() *Email {
 func (e *Email) Compile() ([]byte, error) {
 	exportedPart := e.toPart()
 
-	if len(e.from) > 0 {
-		from := make([]string, len(e.from))
-		for index, addr := range e.from {
+	eFrom := e.from.ExportMailAddressSlice()
+	if len(eFrom) > 0 {
+		from := make([]string, len(eFrom))
+		for index, addr := range eFrom {
 			from[index] = addr.String()
 		}
 		froms := strings.Join(from, `, `)
@@ -173,10 +180,11 @@ func (e *Email) Compile() ([]byte, error) {
 		exportedPart = exportedPart.WithHeaders(exportedPart.GetHeaders().WithHeader(`from`, froms))
 	}
 
+	eTo := e.to.ExportMailAddressSlice()
 	rcpts := make([]string, 0)
-	if len(e.to) > 0 {
-		to := make([]string, len(e.to))
-		for index, addr := range e.to {
+	if len(eTo) > 0 {
+		to := make([]string, len(eTo))
+		for index, addr := range eTo {
 			to[index] = addr.String()
 			rcpts = append(rcpts, addr.Address)
 		}
@@ -187,9 +195,11 @@ func (e *Email) Compile() ([]byte, error) {
 		}
 		exportedPart = exportedPart.WithHeaders(exportedPart.GetHeaders().WithHeader(`to`, tos))
 	}
-	if len(e.cc) > 0 {
-		cc := make([]string, len(e.cc))
-		for index, addr := range e.cc {
+
+	eCc := e.cc.ExportMailAddressSlice()
+	if len(eCc) > 0 {
+		cc := make([]string, len(eCc))
+		for index, addr := range eCc {
 			cc[index] = addr.String()
 			rcpts = append(rcpts, addr.Address)
 		}
@@ -200,9 +210,11 @@ func (e *Email) Compile() ([]byte, error) {
 		}
 		exportedPart = exportedPart.WithHeaders(exportedPart.GetHeaders().WithHeader(`cc`, ccs))
 	}
-	if len(e.bcc) > 0 {
-		bcc := make([]string, len(e.bcc))
-		for index, addr := range e.bcc {
+
+	eBcc := e.bcc.ExportMailAddressSlice()
+	if len(eBcc) > 0 {
+		bcc := make([]string, len(eBcc))
+		for index, addr := range eBcc {
 			bcc[index] = addr.String()
 			rcpts = append(rcpts, addr.Address)
 		}
@@ -213,8 +225,8 @@ func (e *Email) Compile() ([]byte, error) {
 		}
 		exportedPart = exportedPart.WithHeaders(exportedPart.GetHeaders().WithHeader(`bcc`, bccs))
 	}
-	if e.subject != `` {
-		exportedPart = exportedPart.WithHeaders(exportedPart.GetHeaders().WithHeader(`subject`, e.subject))
+	if len(e.subject) > 0 {
+		exportedPart = exportedPart.WithHeaders(exportedPart.GetHeaders().WithHeader(`subject`, string(e.subject)))
 	}
 
 	return exportedPart.Compile()
@@ -229,37 +241,25 @@ func (e *Email) String() string {
 }
 
 func (e *Email) GetSender() *mail.Address {
-	if len(e.from) < 1 {
+	eFrom := e.from.ExportMailAddressSlice()
+	if len(eFrom) < 1 {
 		return nil
 	}
-	return &mail.Address{Name: e.from[0].Name, Address: e.from[0].Address}
+	return &mail.Address{Name: eFrom[0].Name, Address: eFrom[0].Address}
 }
 
 func (e *Email) GetRecipients() []*mail.Address {
-	recipients := make([]*mail.Address, len(e.to))
-	for ind, recipient := range e.to {
+	eTo := e.to.ExportMailAddressSlice()
+	recipients := make([]*mail.Address, len(eTo))
+	for ind, recipient := range eTo {
 		recipients[ind] = &mail.Address{Name: recipient.Name, Address: recipient.Address}
 	}
 	return recipients
 }
 
 func (e *Email) clone() *Email {
-
-	newEmail := NewEmptyEmail()
-
-	newEmail.headers = e.headers.Clone()
-
-	newEmail.from = e.from.clone()
-	newEmail.to = e.to.clone()
-	newEmail.cc = e.cc.clone()
-	newEmail.bcc = e.bcc.clone()
-
-	newEmail.subject = e.subject
-
-	newEmail.mainPart = e.mainPart.clone()
-	newEmail.attachments = part.NewPartsList(e.attachments.ExtractPartsSlice()...)
-
-	return newEmail
+	cloneEmail := *e
+	return &cloneEmail
 }
 
 func (e *Email) toPart() part.Part {
