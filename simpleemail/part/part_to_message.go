@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/lone-cat/tls-mailer/simpleemail/encode"
+	"github.com/lone-cat/tls-mailer/simpleemail/encoding"
 	"github.com/lone-cat/tls-mailer/simpleemail/headers"
 	"io"
 	"mime"
@@ -22,7 +22,7 @@ func (p *part) ToPlainMessage() (msg *mail.Message, err error) {
 		var encodedBody []byte
 
 		if p.GetBodyLen() > 0 {
-			clonedHeaders = clonedHeaders.WithHeader(headers.ContentTypeHeader, http.DetectContentType([]byte(p.GetBody())))
+			clonedHeaders = clonedHeaders.WithHeader(headers.ContentType, http.DetectContentType([]byte(p.GetBody())))
 
 			var contentType string
 			contentType, err = clonedHeaders.GetContentType()
@@ -31,18 +31,18 @@ func (p *part) ToPlainMessage() (msg *mail.Message, err error) {
 			}
 			if strings.HasPrefix(contentType, `text/`) {
 				//encodedBody = mime.QEncoding.Encode(`utf-8`, p.GetBody())
-				encodedBody, err = encode.BytesToQuotedPrintable(p.GetBody())
+				encodedBody, err = encoding.BytesToQuotedPrintable(p.GetBody())
 				if err != nil {
 					return
 				}
-				clonedHeaders = clonedHeaders.WithHeader(headers.ContentTransferEncodingHeader, headers.EncodingQuotedPrintable.String())
+				clonedHeaders = clonedHeaders.WithHeader(headers.ContentTransferEncoding, encoding.QuotedPrintable.String())
 			} else {
 				//encodedBody = mime.BEncoding.Encode(`utf-8`, p.GetBody())
-				encodedBody, err = encode.BytesToBase64(p.GetBody())
+				encodedBody, err = encoding.BytesToBase64(p.GetBody())
 				if err != nil {
 					return nil, err
 				}
-				clonedHeaders = clonedHeaders.WithHeader(headers.ContentTransferEncodingHeader, headers.EncodingBase64.String())
+				clonedHeaders = clonedHeaders.WithHeader(headers.ContentTransferEncoding, encoding.Base64.String())
 			}
 		}
 
@@ -57,7 +57,7 @@ func (p *part) ToPlainMessage() (msg *mail.Message, err error) {
 		return subPartsSlice[0].ToPlainMessage()
 	}
 
-	contentType, params, _ := mime.ParseMediaType(clonedHeaders.GetFirstHeaderValue(headers.ContentTypeHeader))
+	contentType, params, _ := mime.ParseMediaType(clonedHeaders.GetFirstHeaderValue(headers.ContentType))
 	needRegenerateHeader := false
 	if !strings.HasPrefix(contentType, headers.MultipartPrefix) {
 		contentType = headers.MultipartMixed
@@ -69,8 +69,8 @@ func (p *part) ToPlainMessage() (msg *mail.Message, err error) {
 		needRegenerateHeader = true
 	}
 	if needRegenerateHeader {
-		clonedHeaders = clonedHeaders.WithHeader(headers.ContentTypeHeader, fmt.Sprintf(`%s; boundary="%s"`, contentType, boundary))
-		contentType, params, err = mime.ParseMediaType(clonedHeaders.GetFirstHeaderValue(headers.ContentTypeHeader))
+		clonedHeaders = clonedHeaders.WithHeader(headers.ContentType, fmt.Sprintf(`%s; boundary="%s"`, contentType, boundary))
+		contentType, params, err = mime.ParseMediaType(clonedHeaders.GetFirstHeaderValue(headers.ContentType))
 		if err != nil {
 			return
 		}

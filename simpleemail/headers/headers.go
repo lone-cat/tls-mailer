@@ -3,7 +3,7 @@ package headers
 import (
 	"errors"
 	"fmt"
-	"github.com/lone-cat/tls-mailer/simpleemail/encode"
+	"github.com/lone-cat/tls-mailer/simpleemail/encoding"
 	"mime"
 	"net/mail"
 	"net/textproto"
@@ -12,31 +12,16 @@ import (
 	"time"
 )
 
-type Encoding string
-
 const (
-	EncodingEmpty           Encoding = ``
-	Encoding7bit            Encoding = `7bit`
-	Encoding8bit            Encoding = `8bit`
-	EncodingBinary          Encoding = `binary`
-	EncodingQuotedPrintable Encoding = `quoted-printable`
-	EncodingBase64          Encoding = `base64`
-)
-
-func (e Encoding) String() string {
-	return string(e)
-}
-
-const (
-	ContentDispositionHeader      = `Content-Disposition`
-	ContentIdHeader               = `Content-Id`
-	ContentTransferEncodingHeader = `Content-Transfer-Encoding`
-	ContentTypeHeader             = `Content-Type`
-	FromHeader                    = `From`
-	ToHeader                      = `To`
-	CCHeader                      = `Cc`
-	BCCHeader                     = `Bcc`
-	SubjectHeader                 = `Subject`
+	ContentDisposition      = `Content-Disposition`
+	ContentId               = `Content-Id`
+	ContentTransferEncoding = `Content-Transfer-Type`
+	ContentType             = `Content-Type`
+	From                    = `From`
+	To                      = `To`
+	CC                      = `Cc`
+	BCC                     = `Bcc`
+	Subject                 = `Subject`
 )
 
 const (
@@ -127,12 +112,12 @@ func (h *headers) GetHeaderValues(header string) []string {
 }
 
 func (h *headers) GetContentType() (contentType string, err error) {
-	contentType, _, err = mime.ParseMediaType(h.GetFirstHeaderValue(ContentTypeHeader))
+	contentType, _, err = mime.ParseMediaType(h.GetFirstHeaderValue(ContentType))
 	return
 }
 
 func (h *headers) GetBoundary() (boundary string, err error) {
-	_, params, err := mime.ParseMediaType(h.GetFirstHeaderValue(ContentTypeHeader))
+	_, params, err := mime.ParseMediaType(h.GetFirstHeaderValue(ContentType))
 	if err != nil {
 		return ``, err
 	}
@@ -157,8 +142,8 @@ func (h *headers) IsMultipart() bool {
 	return multipart
 }
 
-func (h *headers) GetContentTransferEncoding() Encoding {
-	return Encoding(strings.ToLower(h.GetFirstHeaderValue(ContentTransferEncodingHeader)))
+func (h *headers) GetContentTransferEncoding() encoding.Type {
+	return encoding.Type(strings.ToLower(h.GetFirstHeaderValue(ContentTransferEncoding)))
 }
 
 func (h *headers) Date() (time.Time, error) {
@@ -179,7 +164,7 @@ func (h *headers) Compile() []byte {
 	headerBytes := make([]byte, 0)
 	for _, headerName := range headerNames {
 		for _, headerValue := range h.headers[headerName] {
-			headerLine := fmt.Sprintf("%s: %s\r\n", headerName, encode.EncodedHeaderToMultiline(encode.EncodeHeader(headerValue)))
+			headerLine := fmt.Sprintf("%s: %s\r\n", headerName, encoding.EncodedHeaderToMultiline(encoding.EncodeHeader(headerValue)))
 			headerBytes = append(headerBytes, []byte(headerLine)...)
 		}
 	}

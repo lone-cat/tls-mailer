@@ -1,6 +1,7 @@
 package headers
 
 import (
+	"github.com/lone-cat/tls-mailer/simpleemail/encoding"
 	"net/mail"
 	"time"
 )
@@ -17,7 +18,7 @@ type Headers interface {
 	GetBoundary() (boundary string, err error)
 	IsMultipartWithError() (bool, error)
 	IsMultipart() bool
-	GetContentTransferEncoding() Encoding
+	GetContentTransferEncoding() encoding.Type
 	Compile() []byte
 	Date() (time.Time, error)
 	AddressList(key string) ([]*mail.Address, error)

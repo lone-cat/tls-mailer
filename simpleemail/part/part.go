@@ -35,12 +35,12 @@ func NewEmbeddedPartFromString(cid string, data string) (embeddedPart Part) {
 	embeddedPart = NewPartFromString(data)
 	hdrs := embeddedPart.GetHeaders().
 		WithHeader(
-			headers.ContentDispositionHeader,
+			headers.ContentDisposition,
 			`inline`,
 		)
 	if cid != `` {
 		hdrs = hdrs.WithHeader(
-			headers.ContentIdHeader,
+			headers.ContentId,
 			fmt.Sprintf(`<%s>`, cid),
 		)
 	}
@@ -54,12 +54,12 @@ func NewEmbeddedPartFromBytes(cid string, data []byte) (embeddedPart Part) {
 	embeddedPart = NewPartFromBytes(data)
 	hdrs := embeddedPart.GetHeaders().
 		WithHeader(
-			headers.ContentDispositionHeader,
+			headers.ContentDisposition,
 			`inline`,
 		)
 	if cid != `` {
 		hdrs = hdrs.WithHeader(
-			headers.ContentIdHeader,
+			headers.ContentId,
 			fmt.Sprintf(`<%s>`, cid),
 		)
 	}
@@ -78,7 +78,7 @@ func NewEmbeddedPartFromFile(cid, filename string) (embedded Part, err error) {
 	embedded = NewEmbeddedPartFromBytes(cid, data)
 	hdrs := embedded.GetHeaders().
 		WithHeader(
-			headers.ContentDispositionHeader,
+			headers.ContentDisposition,
 			fmt.Sprintf(`inline; filename="%s"`, filepath.Base(filename)),
 		)
 
@@ -91,7 +91,7 @@ func NewAttachedPartFromString(data string) (attachment Part) {
 	attachment = NewPartFromString(data)
 	hdrs := attachment.GetHeaders().
 		WithHeader(
-			headers.ContentDispositionHeader,
+			headers.ContentDisposition,
 			`attachment`,
 		)
 
@@ -104,7 +104,7 @@ func NewAttachedPartFromBytes(data []byte) (attachment Part) {
 	attachment = NewPartFromBytes(data)
 	hdrs := attachment.GetHeaders().
 		WithHeader(
-			headers.ContentDispositionHeader,
+			headers.ContentDisposition,
 			`attachment`,
 		)
 
@@ -122,7 +122,7 @@ func NewAttachedPartFromFile(filename string) (attachment Part, err error) {
 	attachment = NewAttachedPartFromBytes(data)
 	hdrs := attachment.GetHeaders().
 		WithHeader(
-			headers.ContentDispositionHeader, fmt.Sprintf(`attachment; filename="%s"`, filepath.Base(filename)),
+			headers.ContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, filepath.Base(filename)),
 		)
 
 	attachment = attachment.WithHeaders(hdrs)
@@ -161,9 +161,9 @@ func (p *part) GetBody() []byte {
 func (p *part) WithBody(body []byte) Part {
 	var exportHeaders headers.Headers
 	if len(body) < 1 {
-		exportHeaders = p.headers.WithoutHeader(headers.ContentTypeHeader)
+		exportHeaders = p.headers.WithoutHeader(headers.ContentType)
 	} else {
-		exportHeaders = p.headers.WithHeader(headers.ContentTypeHeader, http.DetectContentType(body))
+		exportHeaders = p.headers.WithHeader(headers.ContentType, http.DetectContentType(body))
 	}
 
 	return &part{

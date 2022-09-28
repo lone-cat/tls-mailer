@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/lone-cat/stackerrors"
-	"github.com/lone-cat/tls-mailer/simpleemail/encode"
+	"github.com/lone-cat/tls-mailer/simpleemail/encoding"
 	"github.com/lone-cat/tls-mailer/simpleemail/headers"
 	"github.com/lone-cat/tls-mailer/simpleemail/part"
 	"net/mail"
@@ -23,6 +23,9 @@ func convertPartToEmail(sourcePart part.Part) (email *Email, err error) {
 	}
 
 	eHeaders, eFrom, eTo, eCc, eBcc, eSubject, err := proccessHeadersAndExtractPrimaryHeaders(sourcePart.GetHeaders())
+	if err != nil {
+		return
+	}
 
 	email.headers = eHeaders
 
@@ -33,10 +36,6 @@ func convertPartToEmail(sourcePart part.Part) (email *Email, err error) {
 
 	email.subject = []byte(eSubject)
 
-	if err != nil {
-		return
-	}
-
 	return
 }
 
@@ -46,7 +45,7 @@ func splitEmailPart(prt part.Part) (relatedPart *relatedSubPart, attachments par
 	}()
 
 	var contentType string
-	if prt.GetHeaders().GetFirstHeaderValue(headers.ContentTypeHeader) != `` || prt.GetBodyLen() > 0 {
+	if prt.GetHeaders().GetFirstHeaderValue(headers.ContentType) != `` || prt.GetBodyLen() > 0 {
 		contentType, err = prt.GetHeaders().GetContentType()
 		if err != nil {
 			return
@@ -82,7 +81,7 @@ func convertToRelatedPart(prt part.Part) (relatedPart *relatedSubPart, err error
 
 	prtHeaders := prt.GetHeaders()
 	var contentType string
-	if prtHeaders.GetFirstHeaderValue(headers.ContentTypeHeader) != `` || prt.GetBodyLen() > 0 {
+	if prtHeaders.GetFirstHeaderValue(headers.ContentType) != `` || prt.GetBodyLen() > 0 {
 		contentType, err = prtHeaders.GetContentType()
 		if err != nil {
 			return
@@ -121,7 +120,7 @@ func convertToAlternativePart(prt part.Part) (alternativePart *alternativeSubPar
 
 	prtHeaders := prt.GetHeaders()
 	var contentType string
-	if prtHeaders.GetFirstHeaderValue(headers.ContentTypeHeader) != `` || prt.GetBodyLen() > 0 {
+	if prtHeaders.GetFirstHeaderValue(headers.ContentType) != `` || prt.GetBodyLen() > 0 {
 		contentType, err = prtHeaders.GetContentType()
 		if err != nil {
 			return
@@ -201,47 +200,47 @@ func proccessHeadersAndExtractPrimaryHeaders(oldHeaders headers.Headers) (hds he
 	cc = make([]*mail.Address, 0)
 	bcc = make([]*mail.Address, 0)
 
-	if oldHeaders.GetFirstHeaderValue(headers.FromHeader) != `` {
-		from, err = oldHeaders.AddressList(headers.FromHeader)
+	if oldHeaders.GetFirstHeaderValue(headers.From) != `` {
+		from, err = oldHeaders.AddressList(headers.From)
 		if err != nil {
 			return
 		}
 	}
 
-	if oldHeaders.GetFirstHeaderValue(headers.ToHeader) != `` {
-		to, err = oldHeaders.AddressList(headers.ToHeader)
+	if oldHeaders.GetFirstHeaderValue(headers.To) != `` {
+		to, err = oldHeaders.AddressList(headers.To)
 		if err != nil {
 			return
 		}
 	}
 
-	if oldHeaders.GetFirstHeaderValue(headers.CCHeader) != `` {
-		cc, err = oldHeaders.AddressList(headers.CCHeader)
+	if oldHeaders.GetFirstHeaderValue(headers.CC) != `` {
+		cc, err = oldHeaders.AddressList(headers.CC)
 		if err != nil {
 			return
 		}
 	}
 
-	if oldHeaders.GetFirstHeaderValue(headers.BCCHeader) != `` {
-		bcc, err = oldHeaders.AddressList(headers.BCCHeader)
+	if oldHeaders.GetFirstHeaderValue(headers.BCC) != `` {
+		bcc, err = oldHeaders.AddressList(headers.BCC)
 		if err != nil {
 			return
 		}
 	}
 
-	subject = oldHeaders.GetFirstHeaderValue(headers.SubjectHeader)
+	subject = oldHeaders.GetFirstHeaderValue(headers.Subject)
 	if subject != `` {
-		subject, err = encode.DecodeHeader(subject)
+		subject, err = encoding.DecodeHeader(subject)
 		if err != nil {
 			return
 		}
 	}
 
-	hds = oldHeaders.WithoutHeader(headers.FromHeader).
-		WithoutHeader(headers.ToHeader).
-		WithoutHeader(headers.CCHeader).
-		WithoutHeader(headers.BCCHeader).
-		WithoutHeader(headers.SubjectHeader)
+	hds = oldHeaders.WithoutHeader(headers.From).
+		WithoutHeader(headers.To).
+		WithoutHeader(headers.CC).
+		WithoutHeader(headers.BCC).
+		WithoutHeader(headers.Subject)
 
 	return
 }

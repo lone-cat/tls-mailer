@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"github.com/lone-cat/stackerrors"
+	"github.com/lone-cat/tls-mailer/simpleemail/encoding"
 	"github.com/lone-cat/tls-mailer/simpleemail/headers"
 	"io"
 	"mime"
@@ -19,7 +20,7 @@ func ConvertMessageToPartRecursive(msg *mail.Message) (exportedPart Part, err er
 		err = stackerrors.WrapInDefer(err)
 	}()
 
-	mediaType, params, err := mime.ParseMediaType(msg.Header.Get(headers.ContentTypeHeader))
+	mediaType, params, err := mime.ParseMediaType(msg.Header.Get(headers.ContentType))
 
 	if strings.HasPrefix(mediaType, headers.MultipartPrefix) {
 		if err != nil {
@@ -101,7 +102,7 @@ func unpackBody(prt Part) (unpacked Part, err error) {
 	defer func() {
 		err = stackerrors.WrapInDefer(err)
 	}()
-	encoding := prt.GetHeaders().GetContentTransferEncoding()
+	enc := prt.GetHeaders().GetContentTransferEncoding()
 
 	unpacked = &part{
 		headers:  prt.GetHeaders(),
@@ -109,15 +110,15 @@ func unpackBody(prt Part) (unpacked Part, err error) {
 		subParts: NewPartsList(prt.GetSubParts()...),
 	}
 
-	if encoding == headers.EncodingQuotedPrintable || encoding == headers.EncodingBase64 {
+	if enc == encoding.QuotedPrintable || enc == encoding.Base64 {
 		var decodedBodyBytes []byte
-		if encoding == headers.EncodingQuotedPrintable {
+		if enc == encoding.QuotedPrintable {
 			decodedBodyBytes, err = io.ReadAll(quotedprintable.NewReader(bytes.NewReader(unpacked.GetBody())))
 			if err != nil {
 				return
 			}
 		}
-		if encoding == headers.EncodingBase64 {
+		if enc == encoding.Base64 {
 			decodedBodyBytes, err = io.ReadAll(base64.NewDecoder(base64.StdEncoding, bytes.NewReader(unpacked.GetBody())))
 			if err != nil {
 				return
@@ -125,7 +126,7 @@ func unpackBody(prt Part) (unpacked Part, err error) {
 		}
 		unpacked = unpacked.WithBody(decodedBodyBytes)
 		unpacked = unpacked.WithHeaders(
-			unpacked.GetHeaders().WithoutHeader(headers.ContentTransferEncodingHeader),
+			unpacked.GetHeaders().WithoutHeader(headers.ContentTransferEncoding),
 		)
 	}
 
