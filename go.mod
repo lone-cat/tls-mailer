@@ -2,4 +2,4 @@ module github.com/lone-cat/tls-mailer
 
 go 1.18
 
-require github.com/lone-cat/stackerrors v0.2.0
+require github.com/lone-cat/stackerrors release
