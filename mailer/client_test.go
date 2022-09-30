@@ -63,7 +63,7 @@ func TestClient(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	email, err = email.WithHtml(`some text<img src="cid:img1" /></html>`)
+	email, err = email.WithHtml(`<html>some text<img src="cid:img1" /></html>`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -73,8 +73,22 @@ func TestClient(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	email, err = email.WithAttachedFile(`../test_attachments/new.txt`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	email = email.WithAttachedBytes([]byte(`dfczxz`))
+
+	email, err = email.WithText(`html>some text<img src="cid:img1" /></html>`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	email = email.WithoutEmbedded()
+
 	fmt.Println(email)
-	err = cl.Send(email)
+	//err = cl.Send(email)
 	if err != nil {
 		t.Fatal(err)
 	}
