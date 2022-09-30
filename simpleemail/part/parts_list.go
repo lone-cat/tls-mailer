@@ -1,15 +1,17 @@
 package part
 
+import "github.com/lone-cat/tls-mailer/common"
+
 type partsList struct {
 	parts []Part
 }
 
 func NewPartsList(parts ...Part) PartsList {
-	return &partsList{parts: copyPartsSlice(parts)}
+	return &partsList{parts: common.CloneSlice(parts)}
 }
 
 func (l *partsList) ExtractPartsSlice() []Part {
-	return copyPartsSlice(l.parts)
+	return common.CloneSlice(l.parts)
 }
 
 func (l *partsList) WithAppended(prt Part) PartsList {
@@ -20,10 +22,4 @@ func (l *partsList) WithAppended(prt Part) PartsList {
 
 func (l *partsList) IsEmpty() bool {
 	return len(l.parts) < 1
-}
-
-func copyPartsSlice(parts []Part) []Part {
-	partsSlice := make([]Part, len(parts))
-	copy(partsSlice, parts)
-	return partsSlice
 }

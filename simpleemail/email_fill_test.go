@@ -7,84 +7,101 @@ import (
 )
 
 func TestEmpty(t *testing.T) {
-	email := NewEmptyEmail()
-	if email.GetText() != "" {
-		t.Errorf(`"Text" is "%s" in empty email`, email.GetText())
+	mail := NewEmptyEmail()
+	if mail.GetText() != "" {
+		t.Errorf(`"Text" is "%s" in empty email`, mail.GetText())
 	}
-	if email.GetHtml() != "" {
-		t.Errorf(`"Html" is "%s" in empty email`, email.GetHtml())
+	if mail.GetHtml() != "" {
+		t.Errorf(`"Html" is "%s" in empty email`, mail.GetHtml())
 	}
-	if email.GetSubject() != "" {
-		t.Errorf(`"Subject" is "%s" in empty email`, email.GetSubject())
+	if mail.GetSubject() != "" {
+		t.Errorf(`"Subject" is "%s" in empty email`, mail.GetSubject())
 	}
-	if len(email.GetFrom()) > 0 {
-		t.Errorf(`"From" contains %#v instead of empty list`, email.GetFrom())
+	if len(mail.GetFrom()) > 0 {
+		t.Errorf(`"From" contains %#v instead of empty list`, mail.GetFrom())
 	}
-	if len(email.GetTo()) > 0 {
-		t.Errorf(`"To" contains %#v instead of empty list`, email.GetTo())
+	if len(mail.GetTo()) > 0 {
+		t.Errorf(`"To" contains %#v instead of empty list`, mail.GetTo())
 	}
-	if len(email.GetCc()) > 0 {
-		t.Errorf(`"Cc" contains %#v instead of empty list`, email.GetCc())
+	if len(mail.GetCc()) > 0 {
+		t.Errorf(`"Cc" contains %#v instead of empty list`, mail.GetCc())
 	}
-	if len(email.GetBcc()) > 0 {
-		t.Errorf(`"Bcc" contains %#v instead of empty list`, email.GetBcc())
+	if len(mail.GetBcc()) > 0 {
+		t.Errorf(`"Bcc" contains %#v instead of empty list`, mail.GetBcc())
 	}
-	if len(email.GetEmbedded().ExtractPartsSlice()) > 0 {
+	if len(mail.(*email).GetEmbedded().ExtractPartsSlice()) > 0 {
 		t.Error(`"Embedded" list is not empty in empty email`)
 	}
-	if len(email.GetAttachments().ExtractPartsSlice()) > 0 {
+	if len(mail.(*email).GetAttachments().ExtractPartsSlice()) > 0 {
 		t.Error(`"Attachments" list is not empty in empty email`)
 	}
 }
 
 func TestFill(t *testing.T) {
-	email := NewEmptyEmail().
+	mail := NewEmptyEmail().
 		WithText(text).
 		WithHtml(html).
-		WithSubject(subject).
-		WithFrom(from).
-		WithTo(to).
-		WithCc(cc).
-		WithBcc(bcc)
-	email, err := email.
+		WithSubject(subject)
+
+	mail, err := mail.WithFrom(from...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mail, err = mail.WithTo(to...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mail, err = mail.WithCc(cc...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mail, err = mail.WithBcc(bcc...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mail, err = mail.
 		WithEmbeddedFile(cid, embedded)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	email, err = email.
+	mail, err = mail.
 		WithAttachedFile(attached)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if email.GetText() != text {
-		t.Errorf(`"Text" filled incorrectly. expected %#v, got %#v`, text, email.GetText())
+	if mail.GetText() != text {
+		t.Errorf(`"Text" filled incorrectly. expected %#v, got %#v`, text, mail.GetText())
 	}
-	if email.GetHtml() != html {
-		t.Errorf(`"Html" filled incorrectly. expected %#v, got %#v`, html, email.GetHtml())
+	if mail.GetHtml() != html {
+		t.Errorf(`"Html" filled incorrectly. expected %#v, got %#v`, html, mail.GetHtml())
 	}
-	if email.GetSubject() != subject {
-		t.Errorf(`"Subject" filled incorrectly. expected %#v, got %#v`, subject, email.GetSubject())
+	if mail.GetSubject() != subject {
+		t.Errorf(`"Subject" filled incorrectly. expected %#v, got %#v`, subject, mail.GetSubject())
 		t.Fail()
 	}
-	if !addressSlicesEqual(email.GetFrom(), from) {
-		t.Errorf(`"From" filled incorrectly. expected %#v, got %#v`, from, email.GetFrom())
+	if !addressSlicesEqual(mail.GetFrom(), from) {
+		t.Errorf(`"From" filled incorrectly. expected %#v, got %#v`, from, mail.GetFrom())
 	}
-	if !addressSlicesEqual(email.GetTo(), to) {
-		t.Errorf(`"To" filled incorrectly. expected %#v, got %#v`, to, email.GetTo())
+	if !addressSlicesEqual(mail.GetTo(), to) {
+		t.Errorf(`"To" filled incorrectly. expected %#v, got %#v`, to, mail.GetTo())
 	}
-	if !addressSlicesEqual(email.GetCc(), cc) {
-		t.Errorf(`"Cc" filled incorrectly. expected %#v, got %#v`, cc, email.GetCc())
+	if !addressSlicesEqual(mail.GetCc(), cc) {
+		t.Errorf(`"Cc" filled incorrectly. expected %#v, got %#v`, cc, mail.GetCc())
 	}
-	if !addressSlicesEqual(email.GetBcc(), bcc) {
-		t.Errorf(`"Bcc" filled incorrectly. expected %#v, got %#v`, bcc, email.GetBcc())
+	if !addressSlicesEqual(mail.GetBcc(), bcc) {
+		t.Errorf(`"Bcc" filled incorrectly. expected %#v, got %#v`, bcc, mail.GetBcc())
 	}
 	dataBytes, err := os.ReadFile(embedded)
 	if err != nil {
 		t.Fatal(err)
 	}
-	embeddedPartsSlice := email.GetEmbedded().ExtractPartsSlice()
+	embeddedPartsSlice := mail.(*email).GetEmbedded().ExtractPartsSlice()
 	if !reflect.DeepEqual(embeddedPartsSlice[0].GetBody(), dataBytes) {
 		t.Errorf(`"Embedded body" filled incorrectly. expected %#v, got %#v`, string(dataBytes), embeddedPartsSlice[0].GetBody())
 	}
@@ -92,7 +109,7 @@ func TestFill(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	attachmentsPartsSlice := email.GetAttachments().ExtractPartsSlice()
+	attachmentsPartsSlice := mail.(*email).GetAttachments().ExtractPartsSlice()
 	if !reflect.DeepEqual(attachmentsPartsSlice[0].GetBody(), dataBytes) {
 		t.Errorf(`"Attached body" filled incorrectly. expected %#v, got %#v`, string(dataBytes), attachmentsPartsSlice[0].GetBody())
 	}

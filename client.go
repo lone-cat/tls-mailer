@@ -80,9 +80,9 @@ func (c *Client) GetType() string {
 	return c.clientType.String()
 }
 
-func (c *Client) Email() *simpleemail.Email {
+func (c *Client) Email() simpleemail.Email {
 	newMail := simpleemail.NewEmptyEmail()
-	newMail = newMail.WithFrom([]*mail.Address{c.sender})
+	newMail, _ = newMail.WithFrom(c.sender)
 	return newMail
 }
 

@@ -10,14 +10,16 @@ import (
 	"net/mail"
 )
 
-func convertPartToEmail(sourcePart part.Part) (email *Email, err error) {
+func convertPartToEmail(sourcePart part.Part) (mail *email, err error) {
 	defer func() {
 		err = stackerrors.WrapInDefer(err)
 	}()
 
-	email = NewEmptyEmail()
+	emailInterface := NewEmptyEmail()
 
-	email.mainPart, email.attachments, err = splitEmailPart(sourcePart)
+	mail = emailInterface.(*email)
+
+	mail.mainPart, mail.attachments, err = splitEmailPart(sourcePart)
 	if err != nil {
 		return
 	}
@@ -27,14 +29,14 @@ func convertPartToEmail(sourcePart part.Part) (email *Email, err error) {
 		return
 	}
 
-	email.headers = eHeaders
+	mail.headers = eHeaders
 
-	email.from = email.from.WithMailAddressSlice(eFrom...)
-	email.to = email.to.WithMailAddressSlice(eTo...)
-	email.cc = email.cc.WithMailAddressSlice(eCc...)
-	email.bcc = email.bcc.WithMailAddressSlice(eBcc...)
+	mail.from = mail.from.WithMailAddressSlice(eFrom...)
+	mail.to = mail.to.WithMailAddressSlice(eTo...)
+	mail.cc = mail.cc.WithMailAddressSlice(eCc...)
+	mail.bcc = mail.bcc.WithMailAddressSlice(eBcc...)
 
-	email.subject = []byte(eSubject)
+	mail.subject = []byte(eSubject)
 
 	return
 }

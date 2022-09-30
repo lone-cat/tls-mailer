@@ -7,6 +7,8 @@ import (
 )
 
 func TestMy(t *testing.T) {
-	email := simpleemail.NewEmptyEmail().WithText(`aaa`)
-	fmt.Println(email)
+	email, _ := simpleemail.NewEmptyEmail().WithText(`привет =) aaa`).WithAttachedFile(`./test_attachments/image1.jpg`)
+	emailStr := email.String()
+	email2, _ := simpleemail.Import(emailStr)
+	fmt.Println(email2)
 }

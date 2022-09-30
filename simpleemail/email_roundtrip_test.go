@@ -44,15 +44,15 @@ func TestRoundTrip(t *testing.T) {
 	}
 }
 
-func testCompare(email *Email, t *testing.T) {
-	emailString := email.String()
+func testCompare(mail Email, t *testing.T) {
+	emailString := mail.String()
 
 	importedEmail, err := Import(emailString)
 	if err != nil {
 		t.Fatalf("%s\r\n%#v", `import failed:`, err)
 	}
 
-	errors := emailsDiffErrors(email, importedEmail)
+	errors := emailsDiffErrors(mail.(*email), importedEmail.(*email))
 	for _, erro := range errors {
 		t.Error(erro)
 	}

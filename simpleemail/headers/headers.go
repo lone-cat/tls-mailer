@@ -3,6 +3,7 @@ package headers
 import (
 	"errors"
 	"fmt"
+	"github.com/lone-cat/tls-mailer/common"
 	"github.com/lone-cat/tls-mailer/simpleemail/encoding"
 	"mime"
 	"net/mail"
@@ -48,7 +49,7 @@ func NewHeaders() Headers {
 func NewHeadersFromMap(mailHeader mail.Header) Headers {
 	head := make(map[string][]string)
 	for headerName, headerValuesSlice := range mailHeader {
-		head[textproto.CanonicalMIMEHeaderKey(headerName)] = copySlice(headerValuesSlice)
+		head[textproto.CanonicalMIMEHeaderKey(headerName)] = common.CloneSlice(headerValuesSlice)
 	}
 	return &headers{
 		headers: head,
@@ -108,7 +109,7 @@ func (h *headers) GetFirstHeaderValue(header string) string {
 }
 
 func (h *headers) GetHeaderValues(header string) []string {
-	return copySlice(h.headers[textproto.CanonicalMIMEHeaderKey(header)])
+	return common.CloneSlice(h.headers[textproto.CanonicalMIMEHeaderKey(header)])
 }
 
 func (h *headers) GetContentType() (contentType string, err error) {

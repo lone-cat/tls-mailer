@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func Import(message string) (email *Email, err error) {
+func Import(message string) (email Email, err error) {
 	defer func() {
 		err = stackerrors.WrapInDefer(err)
 	}()

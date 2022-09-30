@@ -7,11 +7,11 @@ import (
 
 func TestRoundtripCompile(t *testing.T) {
 	for _, em := range emailsForTest {
-		testComiledCompare(em, t)
+		testComiledCompare(em.(*email), t)
 	}
 }
 
-func testComiledCompare(email *Email, t *testing.T) {
+func testComiledCompare(email *email, t *testing.T) {
 	emailString := email.String()
 
 	importedEmail, err := Import(emailString)

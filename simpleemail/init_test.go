@@ -37,7 +37,7 @@ var (
 	attached = `../test_attachments/image2.jpg`
 )
 
-var emailsForTest = make([]*Email, 0)
+var emailsForTest = make([]Email, 0)
 
 func init() {
 	a := make(map[string][]string)
@@ -49,20 +49,32 @@ func init() {
 	email := NewEmptyEmail()
 	emailsForTest = append(emailsForTest, email)
 
-	email = email.
-		WithFrom(from)
+	email, err := email.WithFrom(from...)
+	if err != nil {
+		panic(err)
+	}
+
 	emailsForTest = append(emailsForTest, email)
 
-	email = email.
-		WithTo(to)
+	email, err = email.WithTo(to...)
+	if err != nil {
+		panic(err)
+	}
+
 	emailsForTest = append(emailsForTest, email)
 
-	email = email.
-		WithCc(cc)
+	email, err = email.WithCc(cc...)
+	if err != nil {
+		panic(err)
+	}
+
 	emailsForTest = append(emailsForTest, email)
 
-	email = email.
-		WithBcc(bcc)
+	email, err = email.WithBcc(bcc...)
+	if err != nil {
+		panic(err)
+	}
+
 	emailsForTest = append(emailsForTest, email)
 
 	email = email.
@@ -77,15 +89,13 @@ func init() {
 		WithHtml(html)
 	emailsForTest = append(emailsForTest, email2)
 
-	email2, err := email.
-		WithEmbeddedFile(cid, embedded)
+	email2, err = email.WithEmbeddedFile(cid, embedded)
 	if err != nil {
 		panic(err)
 	}
 	emailsForTest = append(emailsForTest, email2)
 
-	email2, err = email.
-		WithAttachedFile(attached)
+	email2, err = email.WithAttachedFile(attached)
 	if err != nil {
 		panic(err)
 	}

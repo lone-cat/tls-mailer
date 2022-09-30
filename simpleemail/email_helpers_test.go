@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func emailsDiffErrors(e1 *Email, e2 *Email) []error {
+func emailsDiffErrors(e1 *email, e2 *email) []error {
 	errors := make([]error, 0)
 	if !addressSlicesEqual(e1.GetFrom(), e2.GetFrom()) {
 		errors = append(

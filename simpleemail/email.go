@@ -2,6 +2,7 @@ package simpleemail
 
 import (
 	"errors"
+	"fmt"
 	"github.com/lone-cat/tls-mailer/simpleemail/address"
 	"github.com/lone-cat/tls-mailer/simpleemail/headers"
 	"github.com/lone-cat/tls-mailer/simpleemail/part"
@@ -9,7 +10,32 @@ import (
 	"strings"
 )
 
-type Email struct {
+type Email interface {
+	fmt.Stringer
+	GetFrom() []*mail.Address
+	GetTo() []*mail.Address
+	GetCc() []*mail.Address
+	GetBcc() []*mail.Address
+	GetSubject() string
+	GetText() string
+	GetHtml() string
+	Compile() ([]byte, error)
+	WithFrom(...*mail.Address) (Email, error)
+	WithTo(...*mail.Address) (Email, error)
+	WithCc(...*mail.Address) (Email, error)
+	WithBcc(...*mail.Address) (Email, error)
+	WithSubject(string) Email
+	WithText(string) Email
+	WithHtml(string) Email
+	WithEmbeddedFile(cid string, filename string) (Email, error)
+	WithEmbeddedBytes(cid string, bts []byte) Email
+	WithoutEmbedded() Email
+	WithAttachedFile(filename string) (Email, error)
+	WithAttachedBytes(bts []byte) Email
+	WithoutAttachments() Email
+}
+
+type email struct {
 	headers headers.Headers
 
 	from address.AddressList
@@ -24,8 +50,8 @@ type Email struct {
 	attachments part.PartsList
 }
 
-func NewEmptyEmail() *Email {
-	return &Email{
+func NewEmptyEmail() Email {
+	return &email{
 		headers: headers.NewHeaders(),
 
 		from: address.NewAddressList(),
@@ -41,77 +67,93 @@ func NewEmptyEmail() *Email {
 	}
 }
 
-func (e *Email) GetFrom() []*mail.Address {
+func (e *email) GetFrom() []*mail.Address {
 	return e.from.ExportMailAddressSlice()
 }
 
-func (e *Email) GetTo() []*mail.Address {
+func (e *email) GetTo() []*mail.Address {
 	return e.to.ExportMailAddressSlice()
 }
 
-func (e *Email) GetCc() []*mail.Address {
+func (e *email) GetCc() []*mail.Address {
 	return e.cc.ExportMailAddressSlice()
 }
 
-func (e *Email) GetBcc() []*mail.Address {
+func (e *email) GetBcc() []*mail.Address {
 	return e.bcc.ExportMailAddressSlice()
 }
 
-func (e *Email) GetSubject() string {
+func (e *email) GetSubject() string {
 	return string(e.subject)
 }
 
-func (e *Email) GetText() string {
+func (e *email) GetText() string {
 	return string(e.mainPart.alternativeSubPart.textPart.GetBody())
 }
 
-func (e *Email) GetHtml() string {
+func (e *email) GetHtml() string {
 	return string(e.mainPart.alternativeSubPart.htmlPart.GetBody())
 }
 
-func (e *Email) WithFrom(from []*mail.Address) *Email {
+func (e *email) WithFrom(from ...*mail.Address) (mail Email, err error) {
+	if err = validateMailAddressSlice(from); err != nil {
+		return
+	}
 	newEmail := e.clone()
 	newEmail.from = newEmail.from.WithMailAddressSlice(from...)
-	return newEmail
+	mail = newEmail
+	return
 }
 
-func (e *Email) WithTo(to []*mail.Address) *Email {
+func (e *email) WithTo(to ...*mail.Address) (mail Email, err error) {
+	if err = validateMailAddressSlice(to); err != nil {
+		return
+	}
 	newEmail := e.clone()
 	newEmail.to = newEmail.to.WithMailAddressSlice(to...)
-	return newEmail
+	mail = newEmail
+	return
 }
 
-func (e *Email) WithCc(cc []*mail.Address) *Email {
+func (e *email) WithCc(cc ...*mail.Address) (mail Email, err error) {
+	if err = validateMailAddressSlice(cc); err != nil {
+		return
+	}
 	newEmail := e.clone()
 	newEmail.cc = newEmail.cc.WithMailAddressSlice(cc...)
-	return newEmail
+	mail = newEmail
+	return
 }
 
-func (e *Email) WithBcc(bcc []*mail.Address) *Email {
+func (e *email) WithBcc(bcc ...*mail.Address) (mail Email, err error) {
+	if err = validateMailAddressSlice(bcc); err != nil {
+		return
+	}
 	newEmail := e.clone()
 	newEmail.bcc = newEmail.bcc.WithMailAddressSlice(bcc...)
-	return newEmail
+	mail = newEmail
+	return
 }
 
-func (e *Email) WithSubject(subject string) *Email {
+func (e *email) WithSubject(subject string) Email {
 	newEmail := e.clone()
 	newEmail.subject = []byte(subject)
 	return newEmail
 }
 
-func (e *Email) WithText(text string) *Email {
+func (e *email) WithText(text string) Email {
 	newEmail := e.clone()
 	newEmail.mainPart = newEmail.mainPart.WithText([]byte(text))
 	return newEmail
 }
 
-func (e *Email) WithHtml(html string) *Email {
+func (e *email) WithHtml(html string) Email {
 	newEmail := e.clone()
 	newEmail.mainPart = newEmail.mainPart.WithHtml([]byte(html))
 	return newEmail
 }
 
-func (e *Email) WithEmbeddedFile(cid string, filename string) (*Email, error) {
+func (e *email) WithEmbeddedFile(cid string, filename string) (Email, error) {
 	embedded, err := part.NewEmbeddedPartFromFile(cid, filename)
 	if err != nil {
 		return e, err
@@ -120,24 +162,24 @@ func (e *Email) WithEmbeddedFile(cid string, filename string) (*Email, error) {
 	return newEmail, nil
 }
 
-func (e *Email) WithEmbeddedBytes(cid string, bts []byte) *Email {
+func (e *email) WithEmbeddedBytes(cid string, bts []byte) Email {
 	embedded := part.NewEmbeddedPartFromBytes(cid, bts)
 	return e.withEmbedded(embedded)
 }
 
-func (e *Email) withEmbedded(embedded part.Part) *Email {
+func (e *email) withEmbedded(embedded part.Part) Email {
 	newEmail := e.clone()
 	newEmail.mainPart = newEmail.mainPart.WithEmbeddedSubPart(embedded)
 	return newEmail
 }
 
-func (e *Email) WithoutEmbedded() *Email {
+func (e *email) WithoutEmbedded() Email {
 	newEmail := e.clone()
 	newEmail.mainPart = newEmail.mainPart.WithoutEmbeddedSubParts()
 	return newEmail
 }
 
-func (e *Email) WithAttachedFile(filename string) (*Email, error) {
+func (e *email) WithAttachedFile(filename string) (Email, error) {
 	attachment, err := part.NewAttachedPartFromFile(filename)
 	if err != nil {
 		return e, err
@@ -146,24 +188,24 @@ func (e *Email) WithAttachedFile(filename string) (*Email, error) {
 	return newEmail, nil
 }
 
-func (e *Email) WithAttachedBytes(bts []byte) *Email {
+func (e *email) WithAttachedBytes(bts []byte) Email {
 	attachment := part.NewAttachedPartFromBytes(bts)
 	return e.withAttached(attachment)
 }
 
-func (e *Email) withAttached(attachment part.Part) *Email {
+func (e *email) withAttached(attachment part.Part) Email {
 	newEmail := e.clone()
 	newEmail.attachments = newEmail.attachments.WithAppended(attachment)
 	return newEmail
 }
 
-func (e *Email) WithoutAttachments() *Email {
+func (e *email) WithoutAttachments() Email {
 	newEmail := e.clone()
 	newEmail.attachments = part.NewPartsList()
 	return newEmail
 }
 
-func (e *Email) Compile() ([]byte, error) {
+func (e *email) Compile() ([]byte, error) {
 	exportedPart := e.toPart()
 
 	eFrom := e.from.ExportMailAddressSlice()
@@ -232,7 +274,7 @@ func (e *Email) Compile() ([]byte, error) {
 	return exportedPart.Compile()
 }
 
-func (e *Email) String() string {
+func (e *email) String() string {
 	compiled, err := e.Compile()
 	if err != nil {
 		return err.Error()
@@ -240,29 +282,24 @@ func (e *Email) String() string {
 	return string(compiled)
 }
 
-func (e *Email) GetSender() *mail.Address {
-	eFrom := e.from.ExportMailAddressSlice()
+func (e *email) GetSender() *mail.Address {
+	eFrom := e.GetFrom()
 	if len(eFrom) < 1 {
 		return nil
 	}
-	return &mail.Address{Name: eFrom[0].Name, Address: eFrom[0].Address}
+	return eFrom[0]
 }
 
-func (e *Email) GetRecipients() []*mail.Address {
-	eTo := e.to.ExportMailAddressSlice()
-	recipients := make([]*mail.Address, len(eTo))
-	for ind, recipient := range eTo {
-		recipients[ind] = &mail.Address{Name: recipient.Name, Address: recipient.Address}
-	}
-	return recipients
+func (e *email) GetRecipients() []*mail.Address {
+	return e.GetFrom()
 }
 
-func (e *Email) clone() *Email {
+func (e *email) clone() *email {
 	cloneEmail := *e
 	return &cloneEmail
 }
 
-func (e *Email) toPart() part.Part {
+func (e *email) toPart() part.Part {
 	mainPart := e.mainPart.toPart()
 
 	if len(e.attachments.ExtractPartsSlice()) < 1 {
@@ -284,4 +321,28 @@ func validateAddresses(addrs string) error {
 		return err
 	}
 	return errors.New(`address contains invalid value`)
+}
+
+func validateMailAddressSlice(addrss []*mail.Address) (err error) {
+	for i := range addrss {
+		if addrss[i] == nil {
+			err = errors.New(`nil *mail.Address passed`)
+			return
+		}
+		err = validateEmail(addrss[i].Address)
+		if err != nil {
+			return
+		}
+	}
+
+	return
+}
+
+func validateEmail(email string) error {
+	_, err := mail.ParseAddress(email)
+	if err != nil {
+		return errors.New(`invalid email address "` + email + `"`)
+	}
+
+	return nil
 }
