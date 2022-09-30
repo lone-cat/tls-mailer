@@ -49,7 +49,7 @@ func (c *Client) Send(email EmailForClient) error {
 		return err
 	}
 
-	recipients, err := getValidRecipientsStringList(email.GetRecipients())
+	recipients, err := getValidRecipientsStringList(email.GetTo())
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func (c *Client) Send(email EmailForClient) error {
 		return err
 	}
 
-	return c.sendMail(c.server, c.auth, email.GetSender().Address, recipients, compiledBody)
+	return c.sendMail(c.server, c.auth, c.sender.Address, recipients, compiledBody)
 }
 
 func (c *Client) sendMail(addr string, a smtp.Auth, from string, to []string, msg []byte) error {

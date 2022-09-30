@@ -2,6 +2,12 @@ package part
 
 import "github.com/lone-cat/tls-mailer/common"
 
+type PartsList interface {
+	ExtractPartsSlice() []Part
+	WithAppended(prt Part) PartsList
+	IsEmpty() bool
+}
+
 type partsList struct {
 	parts []Part
 }

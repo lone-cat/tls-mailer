@@ -6,6 +6,7 @@ import (
 	"github.com/lone-cat/tls-mailer/simpleemail/address"
 	"github.com/lone-cat/tls-mailer/simpleemail/headers"
 	"github.com/lone-cat/tls-mailer/simpleemail/part"
+	"net/http"
 	"net/mail"
 	"strings"
 )
@@ -25,8 +26,8 @@ type Email interface {
 	WithCc(...*mail.Address) (Email, error)
 	WithBcc(...*mail.Address) (Email, error)
 	WithSubject(string) Email
-	WithText(string) Email
-	WithHtml(string) Email
+	WithText(string) (Email, error)
+	WithHtml(string) (Email, error)
 	WithEmbeddedFile(cid string, filename string) (Email, error)
 	WithEmbeddedBytes(cid string, bts []byte) Email
 	WithoutEmbedded() Email
@@ -141,16 +142,28 @@ func (e *email) WithSubject(subject string) Email {
 	return newEmail
 }
 
-func (e *email) WithText(text string) Email {
+func (e *email) WithText(text string) (mail Email, err error) {
+	textBts := []byte(text)
+	ct := http.DetectContentType(textBts)
+	if !strings.HasPrefix(ct, headers.TextPlain) {
+		err = fmt.Errorf(`content type "%s" passed as text part`, ct)
+	}
 	newEmail := e.clone()
-	newEmail.mainPart = newEmail.mainPart.WithText([]byte(text))
-	return newEmail
+	newEmail.mainPart = newEmail.mainPart.WithText(textBts)
+	mail = newEmail
+	return
 }
 
-func (e *email) WithHtml(html string) Email {
+func (e *email) WithHtml(html string) (mail Email, err error) {
+	htmlBts := []byte(html)
+	ct := http.DetectContentType(htmlBts)
+	if !strings.HasPrefix(ct, headers.TextHtml) {
+		err = fmt.Errorf(`content type "%s" passed as html part`, ct)
+	}
 	newEmail := e.clone()
-	newEmail.mainPart = newEmail.mainPart.WithHtml([]byte(html))
-	return newEmail
+	newEmail.mainPart = newEmail.mainPart.WithHtml(htmlBts)
+	mail = newEmail
+	return
 }
 
 func (e *email) WithEmbeddedFile(cid string, filename string) (Email, error) {

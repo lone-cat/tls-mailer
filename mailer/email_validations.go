@@ -13,7 +13,12 @@ func getFirstBasicEmailValidationError(email EmailForClient, clientSender *mail.
 	if email == nil {
 		return errors.New(`nil email passed`)
 	}
-	sender := email.GetSender()
+	senders := email.GetFrom()
+	if len(senders) < 1 {
+		return errors.New(`email sender is not set`)
+	}
+
+	sender := senders[0]
 	if sender == nil {
 		return errors.New(`email sender is not set`)
 	}

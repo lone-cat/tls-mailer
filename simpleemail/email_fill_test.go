@@ -38,12 +38,19 @@ func TestEmpty(t *testing.T) {
 }
 
 func TestFill(t *testing.T) {
-	mail := NewEmptyEmail().
-		WithText(text).
-		WithHtml(html).
-		WithSubject(subject)
+	mail, err := NewEmptyEmail().WithText(text)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	mail, err := mail.WithFrom(from...)
+	mail, err = mail.WithHtml(html)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mail = mail.WithSubject(subject)
+
+	mail, err = mail.WithFrom(from...)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -46,122 +46,144 @@ func init() {
 	fmt.Println(&a == &b)
 	stackerrors.SetDebugMode(true)
 
-	email := NewEmptyEmail()
-	emailsForTest = append(emailsForTest, email)
+	ml := NewEmptyEmail()
+	emailsForTest = append(emailsForTest, ml)
 
-	email, err := email.WithFrom(from...)
+	ml, err := ml.WithFrom(from...)
 	if err != nil {
 		panic(err)
 	}
 
-	emailsForTest = append(emailsForTest, email)
+	emailsForTest = append(emailsForTest, ml)
 
-	email, err = email.WithTo(to...)
+	ml, err = ml.WithTo(to...)
 	if err != nil {
 		panic(err)
 	}
 
-	emailsForTest = append(emailsForTest, email)
+	emailsForTest = append(emailsForTest, ml)
 
-	email, err = email.WithCc(cc...)
+	ml, err = ml.WithCc(cc...)
 	if err != nil {
 		panic(err)
 	}
 
-	emailsForTest = append(emailsForTest, email)
+	emailsForTest = append(emailsForTest, ml)
 
-	email, err = email.WithBcc(bcc...)
+	ml, err = ml.WithBcc(bcc...)
 	if err != nil {
 		panic(err)
 	}
 
-	emailsForTest = append(emailsForTest, email)
+	emailsForTest = append(emailsForTest, ml)
 
-	email = email.
-		WithSubject(subject)
-	emailsForTest = append(emailsForTest, email)
+	ml = ml.WithSubject(subject)
+	emailsForTest = append(emailsForTest, ml)
 
-	email2 := email.
+	mail2, err := ml.
 		WithText(text)
-	emailsForTest = append(emailsForTest, email2)
+	if err != nil {
+		panic(err)
+	}
+	emailsForTest = append(emailsForTest, mail2)
 
-	email2 = email.
+	mail2, err = ml.
 		WithHtml(html)
-	emailsForTest = append(emailsForTest, email2)
-
-	email2, err = email.WithEmbeddedFile(cid, embedded)
 	if err != nil {
 		panic(err)
 	}
-	emailsForTest = append(emailsForTest, email2)
+	emailsForTest = append(emailsForTest, mail2)
 
-	email2, err = email.WithAttachedFile(attached)
+	mail2, err = ml.WithEmbeddedFile(cid, embedded)
 	if err != nil {
 		panic(err)
 	}
-	emailsForTest = append(emailsForTest, email2)
+	emailsForTest = append(emailsForTest, mail2)
 
-	email2 = email.
+	mail2, err = ml.WithAttachedFile(attached)
+	if err != nil {
+		panic(err)
+	}
+	emailsForTest = append(emailsForTest, mail2)
+
+	mail2, err = ml.
 		WithText(text)
-	email3 := email2.
+	if err != nil {
+		panic(err)
+	}
+	mail3, err := mail2.
 		WithHtml(html)
-	emailsForTest = append(emailsForTest, email3)
+	if err != nil {
+		panic(err)
+	}
+	emailsForTest = append(emailsForTest, mail3)
 
-	email3, err = email2.
+	mail3, err = mail2.
 		WithEmbeddedFile(cid, embedded)
 	if err != nil {
 		panic(err)
 	}
-	emailsForTest = append(emailsForTest, email3)
+	emailsForTest = append(emailsForTest, mail3)
 
-	email3, err = email2.
+	mail3, err = mail2.
 		WithAttachedFile(attached)
 	if err != nil {
 		panic(err)
 	}
-	emailsForTest = append(emailsForTest, email3)
+	emailsForTest = append(emailsForTest, mail3)
 
-	email2 = email.
+	mail2, err = ml.
 		WithHtml(html)
-	email3, err = email2.
+	if err != nil {
+		panic(err)
+	}
+	mail3, err = mail2.
 		WithEmbeddedFile(cid, embedded)
 	if err != nil {
 		panic(err)
 	}
-	emailsForTest = append(emailsForTest, email3)
+	emailsForTest = append(emailsForTest, mail3)
 
-	email3, err = email2.
+	mail3, err = mail2.
 		WithAttachedFile(attached)
 	if err != nil {
 		panic(err)
 	}
-	emailsForTest = append(emailsForTest, email3)
+	emailsForTest = append(emailsForTest, mail3)
 
-	email2, err = email.
+	mail2, err = ml.
 		WithEmbeddedFile(cid, embedded)
 	if err != nil {
 		panic(err)
 	}
-	email3, err = email2.
+	mail3, err = mail2.
 		WithAttachedFile(attached)
 	if err != nil {
 		panic(err)
 	}
-	emailsForTest = append(emailsForTest, email3)
+	emailsForTest = append(emailsForTest, mail3)
 
-	email3 = email.
-		WithText(text).
+	tmpml, err := ml.
+		WithText(text)
+	if err != nil {
+		panic(err)
+	}
+	mail3, err = tmpml.
 		WithHtml(html)
-	email3, err = email3.
+	if err != nil {
+		panic(err)
+	}
+
+	mail3, err = mail3.
 		WithEmbeddedFile(cid, embedded)
 	if err != nil {
 		panic(err)
 	}
-	email3, err = email3.
+	mail3, err = mail3.
 		WithAttachedFile(attached)
 	if err != nil {
 		panic(err)
 	}
-	emailsForTest = append(emailsForTest, email3)
+	emailsForTest = append(emailsForTest, mail3)
 
 }

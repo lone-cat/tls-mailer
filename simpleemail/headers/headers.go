@@ -16,7 +16,7 @@ import (
 const (
 	ContentDisposition      = `Content-Disposition`
 	ContentId               = `Content-Id`
-	ContentTransferEncoding = `Content-Transfer-Type`
+	ContentTransferEncoding = `Content-Transfer-Encoding`
 	ContentType             = `Content-Type`
 	From                    = `From`
 	To                      = `To`
