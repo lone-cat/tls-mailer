@@ -1,4 +1,4 @@
-package tls_mailer
+package mailer
 
 /*
  * from the code sight main difference from "net/smtp"."SendMail()" is mostly in "Dial" function. Other parts just a bit

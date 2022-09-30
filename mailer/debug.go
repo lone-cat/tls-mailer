@@ -1,4 +1,4 @@
-package tls_mailer
+package mailer
 
 var debugMode bool
 
