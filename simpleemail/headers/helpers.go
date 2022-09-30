@@ -1,24 +1,25 @@
 package headers
 
-import "fmt"
-
-func copySlice[T any](src []T) []T {
-	dst := make([]T, len(src))
-	copy(dst, src)
-	return dst
-}
+import (
+	"crypto/rand"
+	"fmt"
+	"github.com/lone-cat/tls-mailer/common"
+	"io"
+)
 
 func copyHeadersMap(src map[string][]string) map[string][]string {
 	dst := make(map[string][]string)
 	for headerName, headerValuesSlice := range src {
-		dst[headerName] = copySlice(headerValuesSlice)
+		dst[headerName] = common.CloneSlice(headerValuesSlice)
 	}
 	return dst
 }
 
-var i = 1
-
 func GenerateBoundary() string {
-	i++
-	return fmt.Sprintf(`bound%d`, i)
+	var buf [30]byte
+	_, err := io.ReadFull(rand.Reader, buf[:])
+	if err != nil {
+		panic(err)
+	}
+	return fmt.Sprintf("boundary_%x", buf[:])
 }
