@@ -15,8 +15,9 @@ func copyHeadersMap(src map[string][]string) map[string][]string {
 	return dst
 }
 
+// GenerateBoundary body for function is copied from mime/multipart/writer.go:randomBoundary() and slightly modified
 func GenerateBoundary() string {
-	var buf [30]byte
+	var buf [25]byte
 	_, err := io.ReadFull(rand.Reader, buf[:])
 	if err != nil {
 		panic(err)

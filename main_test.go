@@ -10,5 +10,5 @@ func TestMy(t *testing.T) {
 	email, _ := simpleemail.NewEmptyEmail().WithText(`привет =) aaa`).WithAttachedFile(`./test_attachments/image1.jpg`)
 	emailStr := email.String()
 	email2, _ := simpleemail.Import(emailStr)
-	fmt.Println(email2)
+	fmt.Println(emailStr == email2.String())
 }

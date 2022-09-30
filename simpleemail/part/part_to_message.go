@@ -80,7 +80,7 @@ func (p *part) ToPlainMessage() (msg *mail.Message, err error) {
 		}
 	}
 
-	bodyWriter := &strings.Builder{}
+	bodyWriter := &bytes.Buffer{}
 	multipartWriter := multipart.NewWriter(bodyWriter)
 	err = multipartWriter.SetBoundary(boundary)
 	if err != nil {
@@ -116,6 +116,6 @@ func (p *part) ToPlainMessage() (msg *mail.Message, err error) {
 
 	return &mail.Message{
 		Header: clonedHeaders.ExtractHeadersMap(),
-		Body:   strings.NewReader(bodyWriter.String()),
+		Body:   bytes.NewReader(bodyWriter.Bytes()),
 	}, nil
 }
