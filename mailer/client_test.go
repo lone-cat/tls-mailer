@@ -46,7 +46,7 @@ func TestClient(t *testing.T) {
 
 	sender.Name = `Test`
 
-	cl, err := mailer.NewClient(mailer.TLSClient, conf.Server, conf.Port, conf.Login, conf.Password, sender)
+	cl, err := mailer.NewClient(mailer.StartTLSClient, conf.Server, conf.Port, conf.Login, conf.Password, sender)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,9 +85,15 @@ func TestClient(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	email = email.WithoutEmbedded()
+	email = email.WithoutAttachments()
 
-	fmt.Println(email)
+	dumpEmail, err := json.MarshalIndent(email.Dump(), ``, `  `)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fmt.Println(string(dumpEmail))
+
 	//err = cl.Send(email)
 	if err != nil {
 		t.Fatal(err)

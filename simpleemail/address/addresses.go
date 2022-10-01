@@ -13,6 +13,7 @@ type AddressList interface {
 	ExportMailAddressSlice() []*mail.Address
 	WithAddressSlice(...Address) AddressList
 	WithMailAddressSlice(...*mail.Address) AddressList
+	Dump() []string
 }
 
 type addressList struct {
@@ -54,6 +55,17 @@ func (a *addressList) String() string {
 	}
 
 	return strings.Join(strAddr, `, `)
+}
+
+func (a *addressList) Dump() []string {
+	dump := make([]string, len(a.addrs))
+	for i := range a.addrs {
+		if a.addrs[i] != nil {
+			dump[i] = a.addrs[i].String()
+		}
+	}
+
+	return dump
 }
 
 func mailAddrSliceToAddrSlice(mailAddresses ...*mail.Address) []Address {

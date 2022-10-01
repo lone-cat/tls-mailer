@@ -84,3 +84,15 @@ func (p *alternativeSubPart) toPart() part.Part {
 func (p *alternativeSubPart) compile() ([]byte, error) {
 	return p.toPart().Compile()
 }
+
+func (p *alternativeSubPart) Dump() map[string]any {
+	if p == nil {
+		return nil
+	}
+	dump := make(map[string]any)
+	dump[`headers`] = p.headers.Dump()
+	dump[`textSubPart`] = p.textPart.Dump()
+	dump[`htmlSubPart`] = p.htmlPart.Dump()
+
+	return dump
+}

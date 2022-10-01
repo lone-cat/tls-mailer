@@ -34,6 +34,7 @@ type Email interface {
 	WithAttachedFile(filename string) (Email, error)
 	WithAttachedBytes(bts []byte) Email
 	WithoutAttachments() Email
+	Dump() map[string]any
 }
 
 type email struct {
@@ -326,6 +327,35 @@ func (e *email) toPart() part.Part {
 	}
 
 	return exportedPart
+}
+
+func (e *email) Dump() map[string]any {
+	if e == nil {
+		return nil
+	}
+
+	dump := make(map[string]any)
+	dump[`to`] = e.to.Dump()
+	dump[`from`] = e.from.Dump()
+	dump[`cc`] = e.cc.Dump()
+	dump[`bcc`] = e.bcc.Dump()
+	dump[`relatedPart`] = e.mainPart.Dump()
+	dump[`attachedParts`] = e.attachments.Dump()
+
+	dump[`compiled`] = func() (compiled string) {
+		defer func() {
+			if r := recover(); r != nil {
+				if compiled != `` {
+					compiled += "\r\n"
+				}
+				compiled = compiled + fmt.Sprintf("%#v", r)
+			}
+		}()
+		compiled = e.String()
+		return
+	}()
+
+	return dump
 }
 
 func validateAddresses(addrs string) error {

@@ -23,6 +23,7 @@ type Part interface {
 	Compile() ([]byte, error)
 	ToPlainMessage() (*mail.Message, error)
 	Clone() Part
+	Dump() map[string]any
 }
 
 type part struct {
@@ -220,4 +221,23 @@ func (p *part) Compile() ([]byte, error) {
 	bytes = append(bytes, bodyBytes...)
 
 	return bytes, nil
+}
+
+func (p *part) Dump() map[string]any {
+	if p == nil {
+		return nil
+	}
+
+	dump := make(map[string]any)
+	dump[`headers`] = p.headers.Dump()
+
+	if len(p.body) > 0 {
+		dump[`body`] = string(p.body)
+	}
+
+	if !p.subParts.IsEmpty() {
+		dump[`subParts`] = p.subParts.Dump()
+	}
+
+	return dump
 }

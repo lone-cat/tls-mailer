@@ -36,6 +36,25 @@ const (
 	TextHtml  = `text/html`
 )
 
+type Headers interface {
+	ExtractHeadersMap() map[string][]string
+	WithHeader(header string, values ...string) Headers
+	WithAddedHeader(header string, values ...string) Headers
+	WithoutHeader(header string) Headers
+	Clone() Headers
+	GetFirstHeaderValue(header string) string
+	GetHeaderValues(header string) []string
+	GetContentType() (string, error)
+	GetBoundary() (boundary string, err error)
+	IsMultipartWithError() (bool, error)
+	IsMultipart() bool
+	GetContentTransferEncoding() encoding.Type
+	Compile() []byte
+	Date() (time.Time, error)
+	AddressList(key string) ([]*mail.Address, error)
+	Dump() map[string]string
+}
+
 type headers struct {
 	headers mail.Header
 }
@@ -171,4 +190,16 @@ func (h *headers) Compile() []byte {
 	}
 
 	return headerBytes
+}
+
+func (h *headers) Dump() map[string]string {
+	if h == nil {
+		return nil
+	}
+	dump := make(map[string]string)
+	for headerName, headerValuesSlice := range h.headers {
+		dump[headerName] = strings.Join(headerValuesSlice, "\r\n")
+	}
+
+	return dump
 }

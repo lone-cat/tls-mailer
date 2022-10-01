@@ -49,6 +49,17 @@ func (p *relatedSubPart) WithoutEmbeddedSubParts() *relatedSubPart {
 	return newRelSubPart
 }
 
+func (p *relatedSubPart) Dump() map[string]any {
+	if p == nil {
+		return nil
+	}
+	dump := make(map[string]any)
+	dump[`headers`] = p.headers.Dump()
+	dump[`alternativeSubPart`] = p.alternativeSubPart.Dump()
+	dump[`embeddedParts`] = p.embeddedSubParts.Dump()
+	return dump
+}
+
 func (p *relatedSubPart) clone() *relatedSubPart {
 	return &relatedSubPart{
 		headers:            p.headers,
